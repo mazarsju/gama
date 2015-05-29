@@ -22,5 +22,6 @@ release/*
 .DS_Store
 *.history
 *.class
-gaml/
 /.metadata/
+/*/gaml/
+/*/bin/
