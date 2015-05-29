@@ -139,7 +139,7 @@ public class AskStatement extends AbstractStatementSequence implements Breakable
 
 		final Iterator<IAgent> runners =
 			t instanceof IContainer ? ((IContainer) t).iterable(scope).iterator() : t instanceof IAgent
-				? singletonIterator(t) : emptyIterator();
+				? singletonIterator((IAgent)t) : emptyIterator();
 		Object[] result = new Object[1];
 		while (runners.hasNext() && scope.execute(sequence, runners.next(), null, result)) {}
 		return result[0];
