@@ -23,7 +23,7 @@ public class InputParameter extends ParameterAdapter {
 	private Number min, max;
 
 	InputParameter(final String name, final Object value) {
-		this(name, value, Types.get(value == null ? Object.class : value.getClass()));
+		this(name, value, Types.get(value == null ? Object.class : (Class<Object>) value.getClass()));
 	}
 
 	public InputParameter(final String name, final Object value, final IType type) {

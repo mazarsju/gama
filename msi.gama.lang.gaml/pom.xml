@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>msi.gama.lang.gaml</groupId>
+  <artifactId>msi.gama.lang.gaml</artifactId>
+  <version>1.4.2</version>
+  <packaging>eclipse-plugin</packaging>
+  <parent>
+  	<groupId>msi.gama.parent</groupId>
+  	<artifactId>msi.gama.parent</artifactId>
+  	<version>1.0.0</version>
+  	<relativePath>../msi.gama.parent/pom.xml</relativePath>
+  </parent>
+  <build>
+<plugins>
+<plugin>
+	<groupId>org.codehaus.mojo</groupId>
+<artifactId>build-helper-maven-plugin</artifactId>
+<version>1.7</version>
+	<executions>
+		<execution>
+			<id>add-source</id>
+			<phase>generate-sources</phase>
+			<goals>
+				<goal>add-source</goal>
+			</goals>
+			<configuration>
+				<sources>
+					<!-- list all source code directories -->
+					<source>src</source>
+					<source>src-gen</source>
+					<source>xtend-gen</source>
+				</sources>
+			</configuration>
+		</execution>
+	</executions>
+</plugin>
+</plugins>
+</build>
+  
+</project>

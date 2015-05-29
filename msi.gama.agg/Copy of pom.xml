@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>msi.gama.agg</groupId>
+  <artifactId>msi.gama.agg</artifactId>
+  <packaging>pom</packaging>
+  <name>msi.gama.agg</name>
+ <modules>
+	<module>../msi.gama.application</module>
+	<module>../msi.gama.core</module>
+	
+	<module>../msi.gama.lang.gaml</module>
+	<module>../msi.gama.lang.gaml.ui</module>
+	<module>../msi.gama.parent</module>
+	<module>../msi.gama.processor</module>
+	<module>../ummisco.gaml.editbox</module>
+	<module>../msi.gama.models</module>
+
+
+
+
+
+
+
+	<module>../msi.gama.ext</module>
+	<module>../ummisco.gama.feature.core</module>
+	<module>../simtools.gaml.extensions.traffic</module>
+	<module>../simtools.gaml.extensions.physics</module>
+	<module>../idees.gama.mapcomparison</module>
+	<module>../irit.gaml.extensions.database</module>
+	<module>../irit.gaml.extensions.test</module>
+	<module>../msi.gama.headless</module>
+	<module>../ummisco.gama.feature.dependencies</module>
+	<module>../msi.gaml.extensions.fipa</module>
+	<module>../ummisco.gaml.extensions.maths</module>
+	<module>../ummisco.gama.feature.jogl2.product</module>
+	<module>../ummisco.gama.feature.models</module>
+	<module>../ummisco.gama.feature.opengl.jogl2</module>
+	<module>../ummisco.gama.feature.product</module>
+	<module>../ummisco.gama.opengl</module>
+ </modules>
+
+  <version>1.0.0</version>
+</project>
