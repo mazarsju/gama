@@ -1,13 +1,15 @@
 /**
- *  graphoperators
- *  Author: Patrick Taillandier
- *  Description: 
- */
+* Name: Graph Operators
+* Author: Patrick Taillandier
+* Description: Model to show how to use the different existing operators for the graph species
+* Tags: Graph
+*/
 
 model graphoperators
 
 global {
-	graph the_graph;
+	graph<geometry,geometry> the_graph;
+	list<list> cliques;
 	init {
 		create people number: 50;
 		
@@ -28,8 +30,12 @@ global {
 		write "beta_index: " + beta_index(the_graph);
 		write "gamma_index: " + gamma_index(the_graph);
 		write "connectivity_index: " + connectivity_index(the_graph);
-		write "connected_components_of: " + connected_components_of(the_graph);
+		write "connected_components_of: " + length(connected_components_of(the_graph));
 		
+		write "connected_components_of: " + length(connected_components_of(the_graph));
+		
+		write "maximal_cliques_of:" + (maximal_cliques_of(the_graph) collect (length(each)));
+		write "biggest_cliques_of:" + (biggest_cliques_of(the_graph) collect (length(each)));
 	}
 }
 
@@ -45,14 +51,14 @@ species people {
 experiment graphoperators type: gui {
 	
 	output {
-		display map {
+		
+		display map background:#lightgray{
 			graphics "edges" {
 				loop edge over: the_graph.edges {
 					draw edge color: #black;
 				}
  			}
  			species people aspect: centrality;
-			
 		}
 	}
 }

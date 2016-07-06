@@ -1,13 +1,13 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'AStar.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.metamodel.topology.graph;
 
@@ -114,7 +114,7 @@ public class AStar<V, E> {
 
 			assert current != null;
 
-			if ( current.node == targetNode ) {
+			if ( current.node.equals(targetNode) ) {
 				assert current.edge != null;
 				isPathFound = true;
 				result = buildPath(current);
@@ -158,7 +158,7 @@ public class AStar<V, E> {
 		if ( isSpatialGraph ) {
 			GamaPoint pt1 = (GamaPoint) ((IShape) node1).getLocation();
 			GamaPoint pt2 = (GamaPoint) ((IShape) node2).getLocation();
-			return Maths.hypot(pt1.x, pt2.x, pt1.y, pt2.y);
+			return pt1.distance(pt2);
 
 		}
 		return 0;

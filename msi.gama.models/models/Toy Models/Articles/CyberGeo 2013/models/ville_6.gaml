@@ -1,4 +1,13 @@
-
+/**
+* Name: Ville 6
+* Author: 
+* Description: Creation of buildings and roads thanks to a shape file. The color of the building depends on the type of the building, 
+* 	while the color of a house depend on its income. People among the world will try to find the best building according to the 
+* 	mean income of their neighbors and their own income, but also to their working place. This model add a new display showing 
+* 	the "color" of each building according to the mean income of its residents. The buildings also have a z location given thanks to 
+* 	a mnt file.
+* Tags: gui, shapefile, graph, 3d
+*/
 model ville
 
 global {
@@ -8,20 +17,17 @@ global {
 	file texture <- file('../includes/Texture.png');
 	geometry shape <- envelope(mnt);
 	graph<point, route> reseau_route;
-	topology topo_route;
 	list<batiment> industries;
 	
 	init {
+		create route from: shape_file_routes;
+		reseau_route <- as_edge_graph(route);
 		create batiment from: shape_file_batiments with: [type:: string(read("NATURE"))] {
 			float z <- (mnt_cell(location)).grid_value;   
 			location <- {location.x,location.y,z};
 		}
 		industries <- batiment select (each.type = "Industrial");
-		create route from: shape_file_routes;
 		create foyer number: 500;
-		reseau_route <- as_edge_graph(route);
-		topo_route <- topology(reseau_route);
-
 	}
 }
 
@@ -74,8 +80,7 @@ species batiment {
 	float revenu_moyen update: empty(foyer) ? 0.0 : mean (foyers collect each.revenu);
 	init {
 		loop bat over: batiment where (each.type = "Industrial") {
-			float dist <- topology(reseau_route) distance_between [self,bat];
-			put (topo_route distance_between [self,bat]) at: bat in: distances;
+			put (topology(reseau_route) distance_between [self,bat]) at: bat in: distances;
 		}
 	}
 	aspect geometrie {
@@ -92,13 +97,13 @@ species route {
 }
 experiment ville type: gui {
 	output {
-		display carte_principale type: opengl ambient_light: 100{
+		display carte_principale type: opengl {
 			grid mnt_cell triangulation: true texture:texture elevation:true transparency: 0.3;
 			species batiment aspect: geometrie;
 			species route aspect: geometrie;
 			species foyer aspect: revenu;
 		}
-		display carte_batiment type: opengl ambient_light: 100{
+		display carte_batiment type: opengl {
 			species batiment aspect: information_foyer;
 		}
 	}

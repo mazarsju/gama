@@ -1,36 +1,40 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'IGui.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.common.interfaces;
 
-import gnu.trove.map.hash.THashMap;
+import java.util.List;
 import java.util.Map;
+
+import gnu.trove.map.hash.THashMap;
+import msi.gama.common.interfaces.IDisplayCreator.DisplayDescription;
 import msi.gama.kernel.experiment.IExperimentPlan;
+import msi.gama.kernel.model.IModel;
 import msi.gama.kernel.simulation.SimulationAgent;
 import msi.gama.metamodel.agent.IAgent;
-import msi.gama.outputs.*;
+import msi.gama.metamodel.shape.IShape;
+import msi.gama.outputs.IDisplayOutput;
+import msi.gama.outputs.LayeredDisplayOutput;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
-import msi.gama.util.GamaColor;
 import msi.gama.util.file.IFileMetaDataProvider;
 import msi.gaml.architecture.user.UserPanelStatement;
 import msi.gaml.types.IType;
-import org.eclipse.core.runtime.CoreException;
 
 /**
  * The class IGui.
- * 
+ *
  * @author drogoul
  * @since 18 d�c. 2011
- * 
+ *
  */
 public interface IGui {
 
@@ -39,24 +43,36 @@ public interface IGui {
 	public static final int INFORM = 2;
 	public static final int NEUTRAL = 3;
 	public static final int USER = 4;
-	public static final String PLUGIN_ID = "msi.gama.application";
+
 	public static final Map<String, IDisplayCreator> DISPLAYS = new THashMap();
+	public static final String MONITOR_VIEW_ID = "msi.gama.application.view.MonitorView";
+	public static final String INTERACTIVE_CONSOLE_VIEW_ID = "msi.gama.application.view.InteractiveConsoleView";
+	public static final String AGENT_VIEW_ID = "msi.gama.application.view.AgentInspectView";
+	public static final String TABLE_VIEW_ID = "msi.gama.application.view.TableAgentInspectView";
+	public static final String LAYER_VIEW_ID = "msi.gama.application.view.LayeredDisplayView";
+	public static final String GL_LAYER_VIEW_ID = "msi.gama.application.view.OpenGLDisplayView";
+	public static final String WEB_VIEW_ID = "msi.gama.application.view.WebDisplayView";
+	public static final String ERROR_VIEW_ID = "msi.gama.application.view.ErrorView";
+	public static final String PARAMETER_VIEW_ID = "msi.gama.application.view.ParameterView";
+	public static final String HEADLESSPARAM_ID = "msi.gama.application.view.HeadlessParam";
+	public static final String HEADLESS_CHART_ID = "msi.gama.hpc.gui.HeadlessChart";
+	public static final String NAVIGATOR_VIEW_ID = "msi.gama.gui.view.GamaNavigator";
+	public static final String NAVIGATOR_LIGHTWEIGHT_DECORATOR_ID = "msi.gama.application.decorator";
+	public static final String CONSOLE_VIEW_ID = "msi.gama.application.view.ConsoleView";
+	public static final String USER_CONTROL_VIEW_ID = "msi.gama.views.userControlView";
+	public static final String GRAPHSTREAM_VIEW_ID = "msi.gama.networks.ui.GraphstreamView";
+	public static final String HPC_PERSPECTIVE_ID = "msi.gama.hpc.HPCPerspectiveFactory";
 
-	void setSubStatusCompletion(double status);
+	public final static String PAUSED = "STOPPED";
+	public final static String RUNNING = "RUNNING";
+	public final static String NOTREADY = "NOTREADY";
+	public final static String ONUSERHOLD = "ONUSERHOLD";
+	public final static String NONE = "NONE";
+	public static final String PERSPECTIVE_MODELING_ID = "msi.gama.application.perspectives.ModelingPerspective";;
 
-	void setStatus(String error, int code);
+	IStatusDisplayer getStatus();
 
-	void setStatus(String msg, GamaColor color);
-
-	void beginSubStatus(String name);
-
-	void endSubStatus(String name);
-
-	void run(Runnable block);
-
-	void asyncRun(Runnable block);
-
-	void raise(Throwable ex);
+	IConsoleDisplayer getConsole();
 
 	IGamaView showView(String viewId, String name, int code);
 
@@ -66,45 +82,22 @@ public interface IGui {
 
 	void showParameterView(IExperimentPlan exp);
 
-	void debugConsole(int cycle, String s);
-
-	void informConsole(String s);
-
-	// void updateViewOf(IDisplayOutput output);
-
 	void debug(String string);
 
-	void warn(String string);
+	void clearErrors();
 
 	void runtimeError(GamaRuntimeException g);
 
-	IEditorFactory getEditorFactory();
-
 	boolean confirmClose(IExperimentPlan experiment);
 
-	void showConsoleView();
+	boolean openSimulationPerspective(boolean immediately);
 
-	void setWorkbenchWindowTitle(String string);
-
-	// void closeViewOf(IDisplayOutput out);
-
-	IGamaView hideView(String viewId);
-
-	IGamaView findView(final IDisplayOutput output);
-
-	boolean isModelingPerspective();
-
-	boolean openModelingPerspective();
-
-	boolean isSimulationPerspective();
-
-	void togglePerspective();
-
-	boolean openSimulationPerspective();
+	boolean openSimulationPerspective(IModel model, String experimentId, boolean immediately);
 
 	IDisplaySurface getDisplaySurfaceFor(LayeredDisplayOutput layerDisplayOutput);
 
-	Map<String, Object> openUserInputDialog(String title, Map<String, Object> initialValues, Map<String, IType> types);
+	Map<String, Object> openUserInputDialog(IScope scope, String title, Map<String, Object> initialValues,
+			Map<String, IType> types);
 
 	void openUserControlPanel(IScope scope, UserPanelStatement panel);
 
@@ -120,39 +113,38 @@ public interface IGui {
 
 	void prepareForExperiment(IExperimentPlan exp);
 
-	void cleanAfterExperiment(IExperimentPlan exp);
-
-	void prepareForSimulation(SimulationAgent sim);
-
-	void cleanAfterSimulation();
-
-	void waitForViewsToBeInitialized();
-
-	void debug(Exception e);
+	void cleanAfterExperiment();
 
 	void editModel(Object eObject);
 
-	public abstract void runModel(final Object object, final String exp) throws CoreException;
+	void runModel(final Object object, final String exp);
 
 	void updateSpeedDisplay(Double d, boolean notify);
 
-	/**
-	 * @param url
-	 * @param html
-	 * @return
-	 */
-	Object showWebEditor(String url, String html);
-
-	/**
-	 * @return
-	 */
-	String getName();
-
-	/**
-	 * 
-	 */
-	void resumeStatus();
-
 	IFileMetaDataProvider getMetaDataProvider();
+
+	void closeSimulationViews(boolean andOpenModelingPerspective, boolean immediately);
+
+	public DisplayDescription getDisplayDescriptionFor(final String name);
+
+	String getExperimentState();
+
+	void updateExperimentState(String state);
+
+	void updateExperimentState();
+
+	void updateViewTitle(IDisplayOutput output, SimulationAgent agent);
+
+	void openWelcomePage(boolean b);
+
+	void updateDecorator(String string);
+
+	void run(Runnable opener);
+
+	void setFocusOn(IShape o);
+
+	void applyLayout(int layout);
+
+	void displayErrors(List<GamaRuntimeException> newExceptions);
 
 }

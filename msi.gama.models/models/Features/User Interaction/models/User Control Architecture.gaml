@@ -1,8 +1,10 @@
 /**
- *  usercontrolarchitecture
- *  Author: Patrick Taillandier
- *  Description: show how to use agent architecture
+* Name: User Command
+* Author: Patrick Taillandier
+* Description: Model which shows how to use the advanced user control, to create and kill agents. 
+* Tags: gui, architecture
  */
+
 
 model user_control
 
@@ -45,13 +47,13 @@ species user control:user_only {
       transition to: "Default" when: true;                    
    }
    user_panel "Advanced Control" {
-      user_command "Kill cells" {
+      user_command "Kill cells" color: #red continue: true{
         user_input "Number" returns: number type: int <- 10;
         ask (number among list(cell)){
            do die;
         }
       }
-      user_command "Create cells" {
+      user_command "Create cells" color: #green {
         user_input "Number" returns: number type: int <- 10;
         create cell number: number ;
       } 

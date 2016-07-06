@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="ummisco/gama/opengl/utils/VertexArrayHandler.java|ummisco/gama/opengl/scene/DEMObject.java" kind="src" path="src"/>
 	<classpathentry kind="src" path="gaml">
 		<attributes>
 			<attribute name="optional" value="true"/>
@@ -13,12 +13,13 @@
 	<classpathentry exported="true" kind="lib" path="gluegen-rt-natives-macosx-universal.jar"/>
 	<classpathentry exported="true" kind="lib" path="gluegen-rt-natives-windows-amd64.jar"/>
 	<classpathentry exported="true" kind="lib" path="gluegen-rt-natives-windows-i586.jar"/>
-	<classpathentry exported="true" kind="lib" path="gluegen-rt.jar" sourcepath="gluegen-java-src.zip"/>
+	<classpathentry exported="true" kind="lib" path="gluegen-rt.jar" sourcepath="gluegen.2.3.2.zip"/>
 	<classpathentry exported="true" kind="lib" path="jogl-all-natives-linux-amd64.jar"/>
 	<classpathentry exported="true" kind="lib" path="jogl-all-natives-linux-i586.jar"/>
 	<classpathentry exported="true" kind="lib" path="jogl-all-natives-macosx-universal.jar"/>
 	<classpathentry exported="true" kind="lib" path="jogl-all-natives-windows-amd64.jar"/>
 	<classpathentry exported="true" kind="lib" path="jogl-all-natives-windows-i586.jar"/>
-	<classpathentry exported="true" kind="lib" path="jogl-all.jar" sourcepath="jogl-java-src.zip"/>
+	<classpathentry exported="true" kind="lib" path="jogl-all.jar" sourcepath="jogl.2.3.2.src.zip"/>
+	<classpathentry exported="true" kind="lib" path="gson-2.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,5 +1,11 @@
+/**
+* Name: Moving cells
+* Author: Arnaud Grignard
+* Description: Second part of the tutorial : Tuto3D
+* Tags: grid, agent_movement
+*/
 model Tuto3D   
-//Model 2 of the 3D tutorial   
+
 global {
   int nb_cells <-100;
   int environmentSize <-100;
@@ -21,7 +27,7 @@ species cells skills:[moving3D]{
   }
 }
 
-experiment Display  type: gui {
+experiment Tuto3D  type: gui {
   parameter "Initial number of cells: " var: nb_cells min: 1 max: 1000 category: "Cells" ;
   output {
     display View1 type:opengl{

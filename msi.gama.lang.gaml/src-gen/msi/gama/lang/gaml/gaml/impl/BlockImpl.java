@@ -18,7 +18,6 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
@@ -29,15 +28,15 @@ import org.eclipse.emf.ecore.util.InternalEList;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
  *   <li>{@link msi.gama.lang.gaml.gaml.impl.BlockImpl#getStatements <em>Statements</em>}</li>
  *   <li>{@link msi.gama.lang.gaml.gaml.impl.BlockImpl#getFunction <em>Function</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
-public class BlockImpl extends MinimalEObjectImpl.Container implements Block
+public class BlockImpl extends EntryImpl implements Block
 {
   /**
    * The cached value of the '{@link #getStatements() <em>Statements</em>}' containment reference list.

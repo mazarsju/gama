@@ -1,17 +1,18 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'GlobalVariableExpression.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.expressions;
 
 import msi.gama.common.interfaces.IKeyword;
+import msi.gama.metamodel.agent.IAgent;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gama.util.GAML;
@@ -28,7 +29,7 @@ public class GlobalVariableExpression extends VariableExpression implements IVar
 			boolean isConst = notModifiable && exp.isConst();
 			if ( isConst ) {
 				IExpression e = GAML.getExpressionFactory().createConst(exp.value(null), type, n);
-				// System.out.println("				==== Simplification of global " + n + " into " + e.toGaml());
+				// System.out.println(" ==== Simplification of global " + n + " into " + e.toGaml());
 				return e;
 			}
 		}
@@ -39,16 +40,24 @@ public class GlobalVariableExpression extends VariableExpression implements IVar
 		final IDescription world) {
 		super(n, type, notModifiable, world);
 	}
+	
+	public IExpression getOwner() {
+		return new WorldExpression("world", this.getDefinitionDescription().getModelDescription().getType(),
+				this.getDefinitionDescription().getModelDescription());
+	}
 
 	@Override
 	public Object value(final IScope scope) throws GamaRuntimeException {
-		return scope.getAgentScope().getScope().getGlobalVarValue(getName());
+//		return scope.getGlobalVarValue(getName());
+		final IAgent sc=scope.getAgentScope();
+		return sc.getScope().getRoot().getScope().getGlobalVarValue(getName());
 	}
 
 	@Override
 	public void setVal(final IScope scope, final Object v, final boolean create) throws GamaRuntimeException {
 		if ( isNotModifiable ) { return; }
-		scope.getAgentScope().getScope().setGlobalVarValue(getName(), v);
+		final IAgent sc=scope.getAgentScope();
+		sc.getScope().getRoot().getScope().setGlobalVarValue(getName(), v);
 	}
 
 	@Override

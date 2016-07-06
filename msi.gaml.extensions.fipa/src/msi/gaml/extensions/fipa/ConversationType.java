@@ -21,7 +21,8 @@ import msi.gaml.types.*;
 @type(name = ConversationType.CONVERSATION_STR,
 	id = ConversationType.CONV_ID,
 	wraps = { Conversation.class },
-	kind = ISymbolKind.Variable.CONTAINER)
+	kind = ISymbolKind.Variable.CONTAINER,
+	concept = { IConcept.TYPE, IConcept.FIPA })
 public class ConversationType extends GamaContainerType<Conversation> {
 
 	public final static String CONVERSATION_STR = "conversation";
@@ -40,10 +41,11 @@ public class ConversationType extends GamaContainerType<Conversation> {
 
 	@Override
 	public IType getContentType() {
-		return Types.get(Message.class);
+		return Types.get(FIPAMessage.class);
 	}
 
-	@operator(value = ConversationType.CONVERSATION_STR, can_be_const = true, category = { IOperatorCategory.FIPA })
+	@operator(value = ConversationType.CONVERSATION_STR, can_be_const = true, category = { IOperatorCategory.FIPA },
+			concept = { IConcept.FIPA })
 	// @doc(value = "to be added", comment = "", special_cases = { "" }, examples = { })
 		public static
 		Conversation asMessage(final IScope scope, final Object val) throws GamaRuntimeException {
@@ -52,7 +54,7 @@ public class ConversationType extends GamaContainerType<Conversation> {
 
 	public static Conversation staticCast(final IScope scope, final Object val, final Object object) {
 		if ( val instanceof Conversation ) { return (Conversation) val; }
-		if ( val instanceof Message ) { return ((Message) val).getConversation(); }
+		if ( val instanceof FIPAMessage ) { return ((FIPAMessage) val).getConversation(); }
 		// ???
 		return null;
 	}

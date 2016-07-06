@@ -29,7 +29,7 @@ import msi.gaml.operators.Cast;
 import msi.gaml.statements.AbstractStatement;
 import msi.gaml.types.IType;
 
-@symbol(name = { "assert" }, kind = ISymbolKind.SINGLE_STATEMENT, with_sequence = true)
+@symbol(name = { "assert" }, kind = ISymbolKind.SINGLE_STATEMENT, with_sequence = true, concept = { IConcept.TEST } )
 @facets(value = {
 	@facet(name = IKeyword.VALUE,
 		type = IType.NONE,
@@ -38,7 +38,7 @@ import msi.gaml.types.IType;
 	@facet(name = IKeyword.EQUALS,
 		type = IType.NONE,
 		optional = true,
-		doc = @doc("an expresion, assert tests whether the value is equals to this expression")),
+		doc = @doc("an expression, assert tests whether the value is equals to this expression")),
 	@facet(name = IKeyword.ISNOT,
 		type = IType.NONE,
 		optional = true,
@@ -46,10 +46,10 @@ import msi.gaml.types.IType;
 	@facet(name = IKeyword.RAISES,
 		type = IType.ID,
 		optional = true,
-		doc = @doc("\"error\" or \"warning\", used in testing what raises the evaluation of the value: expresion")) },
+		doc = @doc("\"error\" or \"warning\", used in testing what raises the evaluation of the value: expression")) },
 	omissible = IKeyword.VALUE)
 @inside(symbols = { "test" })
-@doc(value = "Allows to check whether the evaluation of a given expression fulfils a given condition. If it is not fulfilled, an exception is raised.",
+@doc(value = "Allows to check whether the evaluation of a given expression fulfills a given condition. If it is not fulfilled, an exception is raised.",
 	usages = {
 		@usage(value = "if the equals: facet is used, the equality between the evaluation of expressions in the value: and in the equals: facets is tested",
 			examples = @example("assert (2+2) equals: 4;")),

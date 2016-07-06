@@ -1,18 +1,21 @@
 /**
- *  HowToImportRasterAndVectoriel
- *  Author: Maroussia Vavasseur and Benoit Gaudou
- *  Description: Importation of 1 raster and 2 vectorials data
- */
+* Name: Raster File and Shapefiles Import
+* Author: Maroussia Vavasseur and Benoit Gaudou
+* Description: Model which imports data from a raster file and two shapefiles to initilalize a grid and two species. The roaster file initialize a grid attribute for the cells 
+* and the shapefiles a river species just with the same shape, and the managementUnit species with a link between the columns of the shapefile and the attributes 
+* of the species. 
+* Tags:  load_file, gis, shapefile, raster
+*/
 
-model HowToImportRasterAndVectoriel
+model RasterAndShapefiles
 
 
  
 global {
 	// Constants
-	const heightImg type: int <- 5587;
-	const widthImg type: int <- 6201;	
-	const boundsMNT type: file <- file("../images/mnt/boundsMNT.shp"); 
+	int heightImg const: true <- 5587;
+	int widthImg const: true <- 6201;	
+	file boundsMNT const: true <- file("../images/mnt/boundsMNT.shp"); 
 	
 	
 // The environment bounds are defined using the hand-made boundsMNT shapefile.
@@ -66,7 +69,7 @@ species managementUnit{
 }	
 species izard {	
 	init{
-		location <- (shuffle(cell) first_with ((each.color != #white) and (empty(agents overlapping each)))).location ;
+		location <- (shuffle(cell) first_with ((each.color != #white) and (empty(izard inside each)))).location ;
 	}	
 	aspect default{
 		draw square(5000) color: #orange;
@@ -83,16 +86,6 @@ grid cell width: widthImg/factorDiscret height: heightImg/factorDiscret;
 
 
 experiment main type: gui {
-	// Parameters
-	parameter 'MNT file' var: mntImageRaster category: 'MNT' ;
-	parameter'Discretization factor' var: factorDiscret category:'Environment';
-	
-	parameter 'Nb of Izards' var: nbIzard category: 'Izard'; 
-	parameter 'Izard Shape' var: izardShape category: 'Izard';
-	
-	parameter 'Management unit' var: ManagementUnitShape category: 'MU' ;
-	
-	parameter 'Rivers shapefile' var: waterShape category: 'Water';
 	
 	// We display:
 	// - the original MNT image as background

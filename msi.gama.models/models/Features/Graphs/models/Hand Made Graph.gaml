@@ -1,26 +1,30 @@
 /**
- *  Hand made graph
- *  Author: Patrick Taillandier
- *  Description: Show how to build a graph from scratch
- */
+* Name: Hand Made Graph
+* Author: Patrick Taillandier
+* Description: Model to show how to build a graph from scratch using three ways : by putting a list of edges as parameter of as_edge_graph, by adding 
+* a node or an edge manually using facet to or by changing the graph itself after adding a node or an edge. The experiment has two displays : one for 
+* the first graph created from the list of edges, an other for the graph creating by adding the nodes and edges manually using add operator.
+* Tags: graph, node, edge
+*/
 
-model hameMadeGraph
+@no_warning
+model handMadeGraph
 
 global {
-	graph the_graph1 ;
-	graph the_graph2;
+	graph<geometry, geometry> the_graph1 ;
+	graph<geometry, geometry> the_graph2;
 	
 	init {
 		the_graph1 <- as_edge_graph([edge({10,5}, {20,3}), edge({10,5}, {30,30}),edge({30,30}, {80,35}),edge({80,35}, {40,60}),edge({80,35}, {10,5}), node ({50,50})]);	
 		
-		the_graph2 <- graph([]);
+		the_graph2 <- graph<geometry, geometry>([]);
 		//first way to add nodes and edges
-		add node: {50,50} to: the_graph2;
-		add edge: {10,10}::{90,50} to: the_graph2;
+		the_graph2 << node({50,50}) ;
+		the_graph2 << edge({10,10},{90,50});
 		
 		//second way to add nodes and edges
 		the_graph2 <- the_graph2 add_node {10,40} ;
-		the_graph2 <- the_graph2 add_edge ({35,50}::{50,50}) ;
+		the_graph2 <- the_graph2 add_edge ({35,50}:: {50,50}) ;
 	}
 	
 }

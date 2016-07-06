@@ -25,6 +25,8 @@ public class WorkspaceManager {
 		wsFile = new File(mainFile.getParent());			
 	}
 
+	public File getFile(){return wsFile;}
+	
 	public File getPluginFolder(String plugin){
 		return new File(wsFile.getAbsolutePath() + File.separator + plugin);
 	}
@@ -195,6 +197,47 @@ public class WorkspaceManager {
 	}
 
 	
+/*****************************************************************************************************
+ * 
+ * 
+ */
+	public ArrayList<String> getModelLibrary(){
+		ArrayList<String> modelList = litRep(wsFile.getAbsolutePath() + File.separator + "msi.gama.models"+File.separator+"models");
+		return modelList;
+	}
+	
+	private static ArrayList<String> litRep(String dir){
+		ArrayList<String> listFiles = new ArrayList<String>();
+		File rep = new File(dir);
+		
+		if(rep.isDirectory()){
+			String t[] = rep.list();
+			
+			if(t!=null){
+				for(String fName : t) {
+					ArrayList<String> newList = litRep(rep.getAbsolutePath()+File.separator+fName);
+					listFiles.addAll(newList);
+				}
+			}
+		} else {
+			if("gaml".equals(WorkspaceManager.getFileExtension(rep.getAbsolutePath()))){
+				listFiles.add(rep.getAbsolutePath());				
+			}
+		}
+		
+		return listFiles;
+	}
+	
+	private static String getFileExtension(String fileName) {
+	    String extension = null;
+		try {
+	        extension =  fileName.substring(fileName.lastIndexOf(".") + 1);
+	    } catch (Exception e) {
+	    	e.printStackTrace();
+	    }
+		return extension;
+	}
+	
 	
 	public static void main(String[] arg) throws IOException, ParserConfigurationException, SAXException{
 		WorkspaceManager ws = new WorkspaceManager(".");
@@ -219,6 +262,18 @@ public class WorkspaceManager {
 			System.out.println(e.getKey());
 		}
 		System.out.println("----------");
+		
+		System.out.println("----------");
+		
+
+		
+		l = ws.getModelLibrary();
+		for(String name : l){
+			System.out.println(name);
+		}
+		System.out.println(l.size());
+		System.out.println("----------");
+		
 	}
 }
 

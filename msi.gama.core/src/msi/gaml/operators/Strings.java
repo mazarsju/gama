@@ -39,77 +39,17 @@ public class Strings {
 	public static final String LN = java.lang.System.getProperty("line.separator");
 	public static final String TAB = "\t";
 
-	static Pattern model_pattern = Pattern.compile("%[YMDhms]");
-	static Pattern system_pattern = Pattern.compile("%[YMNDEhmsz]");
-	private static PeriodFormatterBuilder format;
-	private static DateTimeFormatterBuilder systemFormat;
-	private static PeriodFormatter dateFormat;
-	private static PeriodFormatter timeFormat;
-	private static DateTimeFormatter systemDateFormat;
-	private static DateTimeFormatter systemTimeFormat;
-	private static GamaChronology chronology;
 
-	static PeriodFormatterBuilder getCustomFormat() {
-		if ( format == null ) {
-			format = new PeriodFormatterBuilder();
-		}
-		return format;
-	}
 
-	static DateTimeFormatterBuilder getSystemFormat() {
-		if ( systemFormat == null ) {
-			systemFormat = new DateTimeFormatterBuilder();
-		}
-		return systemFormat;
-	}
 
-	static PeriodFormatter getTimeFormat() {
-		if ( timeFormat == null ) {
-			timeFormat =
-				new PeriodFormatterBuilder().printZeroAlways().minimumPrintedDigits(2).appendHours().appendLiteral(":")
-					.appendMinutes().appendLiteral(":").appendSeconds().toFormatter();
-		}
-		return timeFormat;
-	}
-
-	static DateTimeFormatter getSystemTimeFormat() {
-		if ( systemTimeFormat == null ) {
-			systemTimeFormat = DateTimeFormat.forPattern("HH:mm:ss");
-		}
-		return systemTimeFormat;
-	}
-
-	static DateTimeFormatter getSystemDateFormat() {
-		if ( systemDateFormat == null ) {
-			systemDateFormat = ISODateTimeFormat.yearMonthDay();
-		}
-		return systemDateFormat;
-	}
-
-	static PeriodFormatter getDateFormat() {
-		if ( dateFormat == null ) {
-			dateFormat =
-				new PeriodFormatterBuilder().appendYears().appendSuffix(" year", " years").appendSeparator(", ")
-					.appendMonths().appendSuffix(" month", " months").appendSeparator(", ").appendWeeks()
-					.appendSuffix(" week", " weeks").appendSeparator(", ").appendDays().appendSuffix(" day", " days")
-					.appendSeparator(" ").toFormatter();
-		}
-		return dateFormat;
-	}
-
-	static GamaChronology getChronology() {
-		if ( chronology == null ) {
-			chronology = new GamaChronology(GregorianChronology.getInstanceUTC());
-		}
-		return chronology;
-	}
-
-	@operator(value = IKeyword.PLUS, can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = IKeyword.PLUS, can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	public static String opPlus(final String a, final String b) {
 		return a + b;
 	}
 
-	@operator(value = IKeyword.PLUS, can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = IKeyword.PLUS, can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if the left-hand operand is a string, returns the concatenation of the two operands (the left-hand one beind casted into a string)",
 		examples = @example(value = "\"hello \" + 12", equals = "\"hello 12\"")))
 	public static
@@ -117,7 +57,8 @@ public class Strings {
 		return a + Cast.asString(scope, b);
 	}
 
-	@operator(value = "in", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "in", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if both operands are strings, returns true if the left-hand operand patterns is included in to the right-hand string;"),
 		examples = @example(value = " 'bc' in 'abcded'", equals = "true"))
 	public static
@@ -125,7 +66,8 @@ public class Strings {
 		return target.contains(pattern);
 	}
 
-	@operator(value = "contains", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "contains", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if both operands are strings, returns true if the right-hand operand contains the right-hand pattern;"),
 		examples = @example(value = "'abcded' contains 'bc'", equals = "true"))
 	public static
@@ -133,7 +75,8 @@ public class Strings {
 		return opIn(pattern, target);
 	}
 
-	@operator(value = "contains_any", can_be_const = true, expected_content_type = { IType.STRING })
+	@operator(value = "contains_any", can_be_const = true, expected_content_type = { IType.STRING },
+			concept = { IConcept.STRING })
 	@doc(examples = @example(value = "\"abcabcabc\" contains_any [\"ca\",\"xy\"]", equals = "true"))
 	public static Boolean opContainsAny(final String target, final List l) {
 		for ( Object o : l ) {
@@ -142,7 +85,8 @@ public class Strings {
 		return false;
 	}
 
-	@operator(value = "contains_all", can_be_const = true, expected_content_type = { IType.STRING })
+	@operator(value = "contains_all", can_be_const = true, expected_content_type = { IType.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if the left-operand is a string, test whether the string contains all the element of the list;",
 		examples = @example(value = "\"abcabcabc\" contains_all [\"ca\",\"xy\"]", equals = "false")))
 	public static
@@ -153,7 +97,8 @@ public class Strings {
 		return true;
 	}
 
-	@operator(value = "index_of", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "index_of", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if both operands are strings, returns the index within the left-hand string of the first occurrence of the given right-hand string",
 		examples = @example(value = " \"abcabcabc\" index_of \"ca\"", equals = "2")))
 	public static
@@ -161,7 +106,8 @@ public class Strings {
 		return target.indexOf(pattern);
 	}
 
-	@operator(value = "last_index_of", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "last_index_of", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if both operands are strings, returns the index within the left-hand string of the rightmost occurrence of the given right-hand string",
 		examples = @example(value = "\"abcabcabc\" last_index_of \"ca\"", equals = "5")))
 	public static
@@ -169,7 +115,8 @@ public class Strings {
 		return target.lastIndexOf(pattern);
 	}
 
-	@operator(value = { "copy_between" /* , "copy" */}, can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = { "copy_between" /* , "copy" */}, can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(examples = @example(value = "copy_between(\"abcabcabc\", 2,6)", equals = "\"cabc\""))
 	public static String opCopy(final String target, final Integer beginIndex, final Integer endIndex) {
 		int bIndex = beginIndex < 0 ? 0 : beginIndex;
@@ -181,7 +128,8 @@ public class Strings {
 	@operator(value = { "split_with", "tokenize" },
 		content_type = IType.STRING,
 		can_be_const = true,
-		category = { IOperatorCategory.STRING })
+		category = { IOperatorCategory.STRING },
+		concept = { IConcept.STRING })
 	@doc(value = "Returns a list containing the sub-strings (tokens) of the left-hand operand delimited by each of the characters of the right-hand operand.",
 		comment = "Delimiters themselves are excluded from the resulting list.",
 		examples = @example(value = "'to be or not to be,that is the question' split_with ' ,'",
@@ -192,16 +140,31 @@ public class Strings {
 		return GamaListFactory.create(scope, Types.STRING, st);
 	}
 
-	@operator(value = { "replace" }, can_be_const = true, category = { IOperatorCategory.STRING })
-	@doc(value = "Returns the String resulting by replacing for the first operand all the sub-strings corresponding the the second operand by the thrid operand",
+	@operator(value = { "replace" }, can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
+	@doc(value = "Returns the String resulting by replacing for the first operand all the sub-strings corresponding the second operand by the third operand",
 		examples = @example(value = "replace('to be or not to be,that is the question','to', 'do')",
-			equals = "'do be or not do be,that is the question'"))
+			equals = "'do be or not do be,that is the question'"),
+		see = { "replace_regex"})
 	public static
 		String opReplace(final String target, final String pattern, final String replacement) {
+		return target.replace(pattern, replacement);
+	}
+	
+	@operator(value = { "replace_regex" }, can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
+	@doc(value = "Returns the String resulting by replacing for the first operand all the sub-strings corresponding to the regular expression given in the second operand by the third operand",
+		examples = @example(value = "replace_regex(\"colour, color\", \"colou?r\", \"col\")",
+			equals = "'col, col'"),
+	see = { "replace"})
+	public static
+		String opReplaceRegex(final String target, final String pattern, final String replacement) {
 		return target.replaceAll(pattern, replacement);
 	}
-
-	@operator(value = "is_number", can_be_const = true, category = { IOperatorCategory.STRING })
+	
+	
+	@operator(value = "is_number", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(value = "tests whether the operand represents a numerical value",
 		comment = "Note that the symbol . should be used for a float value (a string with , will not be considered as a numeric value). "
 			+ "Symbols e and E are also accepted. A hexadecimal value should begin with #.",
@@ -297,8 +260,9 @@ public class Strings {
 		return !allowSigns && foundDigit;
 	}
 
-	@operator(value = "reverse", can_be_const = true, category = { IOperatorCategory.STRING })
-	@doc(usages = @usage(value = "if it is a string, reverse returns a new string with caracters in the reversed order",
+	@operator(value = "reverse", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
+	@doc(usages = @usage(value = "if it is a string, reverse returns a new string with characters in the reversed order",
 		examples = @example(value = "reverse ('abcd')", equals = "'dcba'")))
 	static public
 		String reverse(final String s) {
@@ -307,7 +271,8 @@ public class Strings {
 		return buf.toString();
 	}
 
-	@operator(value = "empty", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "empty", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if it is a string, empty returns true if the string does not contain any character, and false otherwise",
 		examples = @example(value = "empty ('abced')", equals = "false")))
 	static public
@@ -315,7 +280,8 @@ public class Strings {
 		return s != null && s.isEmpty();
 	}
 
-	@operator(value = "first", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "first", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if it is a string, first returns a string composed of its first character",
 		examples = @example(value = "first ('abce')", equals = "'a'")))
 	static public String first(final String s) {
@@ -323,7 +289,8 @@ public class Strings {
 		return String.valueOf(s.charAt(0));
 	}
 
-	@operator(value = "last", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "last", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if it is a string, last returns a string composed of its last character, or an empty string if the operand is empty",
 		examples = @example(value = "last ('abce')", equals = "'e'")))
 	static public
@@ -332,7 +299,8 @@ public class Strings {
 		return String.valueOf(s.charAt(s.length() - 1));
 	}
 
-	@operator(value = "length", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "length", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "if it is a string, length returns the number of characters",
 		examples = @example(value = "length ('I am an agent')", equals = "13")))
 	static public Integer length(final String s) {
@@ -340,13 +308,15 @@ public class Strings {
 		return s.length();
 	}
 
-	@operator(value = { IKeyword.AT, "@" }, can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = { IKeyword.AT, "@" }, can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(examples = @example(value = "'abcdef' at 0", equals = "'a'"))
 	public static String get(final String lv, final int rv) {
 		return rv < lv.length() && rv >= 0 ? lv.substring(rv, rv + 1) : "";
 	}
 
-	@operator(value = "char", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "char", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc(usages = @usage(value = "converts ACSII integer value to character", examples = @example(value = "char (34)",
 		equals = "'\"'")))
 	static public String asChar(final Integer s) {
@@ -354,7 +324,8 @@ public class Strings {
 		return Character.toString((char) s.intValue());
 	}
 
-	@operator(value = "indented_by", can_be_const = true, category = { IOperatorCategory.STRING })
+	@operator(value = "indented_by", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
 	@doc("Converts a (possibly multiline) string by indenting it by a number -- specified by the second operand -- of tabulations to the right")
 	static public
 		String indent(final String s, final int nb) {
@@ -367,216 +338,28 @@ public class Strings {
 		String indented = s.replaceAll("(?m)^", t);
 		return indented;
 	}
-
-	private static final class GamaChronology extends AssembledChronology {
-
-		private GamaChronology(final Chronology base) {
-			super(base, null);
-		}
-
-		@Override
-		protected void assemble(final AssembledChronology.Fields fields) {
-			fields.months = new PreciseDurationField(DurationFieldType.months(), (long) IUnits.month * 1000);
-			fields.years = new PreciseDurationField(DurationFieldType.years(), (long) IUnits.year * 1000);
-		}
-
-		@Override
-		public Chronology withUTC() {
-			return this;
-		}
-
-		@Override
-		public Chronology withZone(final DateTimeZone zone) {
-			return this;
-		}
-
-		@Override
-		public String toString() {
-			return "GAMA Chronology : 1 yr = 12 months ; 1 month = 30 days ";
-		}
-
+	
+	@operator(value = "lower_case", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
+	@doc(value ="Converts all of the characters in the string operand to lower case",
+	examples = @example(value = "lower_case(\"Abc\")",
+	equals = "'abc'"),
+	see = { "upper_case"})
+	static public String toLowerCase(final String s) {
+		if ( s == null ) { return s; }
+		return s.toLowerCase();
+	}
+	
+	@operator(value = "upper_case", can_be_const = true, category = { IOperatorCategory.STRING },
+			concept = { IConcept.STRING })
+	@doc(value ="Converts all of the characters in the string operand to upper case",
+			examples = @example(value = "upper_case(\"Abc\")",
+			equals = "'ABC'"),
+	see = { "lower_case"})
+	static public String toUpperCase(final String s) {
+		if ( s == null ) { return s; }
+		return s.toUpperCase();
 	}
 
-	@operator(value = "as_date", can_be_const = true, category = { IOperatorCategory.STRING, IOperatorCategory.TIME })
-	@doc(value = "converts a number of seconds in the model (for instance, the 'time' variable) into a string that represents the period elapsed since the beginning of the simulation using year, month, day, hour, minutes and seconds following a given pattern (right-hand operand). GAMA uses a special calendar for internal model times, where months have 30 days and years 12 months. ",
-		masterDoc = true,
-		usages = @usage(value = "Pattern should include : \"%Y %M %D %h %m %s\" for outputting years, months, days, hours, minutes, seconds",
-			examples = @example(value = "22324234 as_date \"%M m %D d %h h %m m %s seconds\"",
-				equals = "\"8 m 18 d 9 h 10 m 34 seconds\"")),
-		see = { "as_time" })
-	public static
-		String asDate(final double time, final String pattern) {
-		// Pattern should include : "%Y %M %D %h %m %s" for outputting years, months, days, hours,
-		// minutes, seconds
-		if ( pattern == null || pattern.isEmpty() ) { return asDate(time) + " " + asTime(time); }
-		getCustomFormat().clear();
-		List<String> dateList = new ArrayList();
-		final Matcher m = model_pattern.matcher(pattern);
-		int i = 0;
-		while (m.find()) {
-			String tmp = m.group();
-			if ( i != m.start() ) {
-				dateList.add(pattern.substring(i, m.start()));
-			}
-			dateList.add(tmp);
-			i = m.end();
-		}
-		if ( i != pattern.length() ) {
-			dateList.add(pattern.substring(i));
-		}
-		for ( i = 0; i < dateList.size(); i++ ) {
-			String s = dateList.get(i);
-			if ( s.charAt(0) == '%' && s.length() == 2 ) {
-				Character c = s.charAt(1);
-				switch (c) {
-					case 'Y':
-						getCustomFormat().appendYears();
-						break;
-					case 'M':
-						getCustomFormat().appendMonths();
-						break;
-					case 'D':
-						getCustomFormat().appendDays();
-						break;
-					case 'h':
-						getCustomFormat().appendHours();
-						break;
-					case 'm':
-						getCustomFormat().appendMinutes();
-						break;
-					case 's':
-						getCustomFormat().appendSeconds();
-						break;
-					default:
-						getCustomFormat().appendLiteral(s);
-				}
-			} else {
-				getCustomFormat().appendLiteral(s);
-			}
-		}
-
-		PeriodFormatter pf = getCustomFormat().toFormatter();
-		PeriodType pt = PeriodType.yearMonthDayTime();
-		return pf.print(new Period(new Duration((long) time * 1000), getChronology()).normalizedStandard(pt));
-
-	}
-
-	@operator(value = "as_system_date", can_be_const = true, category = { IOperatorCategory.STRING,
-		IOperatorCategory.TIME })
-	@doc(value = "converts a number of milliseconds in the system (for instance, the 'machine_time' variable) into a string that represents the current date represented by these milliseconds  using year, month, day, hour, minutes, seconds and time-zone offset following a given pattern (right-hand operand) ",
-		masterDoc = true,
-		usages = @usage(value = "Pattern should include : \"%Y %M %N %D %E %h %m %s %z\" for outputting years, months, name of month, days, name of days, hours, minutes, seconds and the time-zone. A null or empty pattern will return the complete date as defined by the ISO 8601 standard yyyy-MM-ddThh:mm:ss w/o the time-zone offset. Names are defined using the locale of the system",
-			examples = @example(value = "2147483647 as_date \" %D %Y %M / %h:%m:%s %z\"",
-				equals = "\"06 2015 05 / 23:58:57 +07\"")),
-		see = { "as_system_time" })
-	public static
-		String asSystemDate(final double time, final String pattern) {
-		// Pattern should include : "%Y %M %D %h %m %s" for outputting years, months, days, hours,
-		// minutes, seconds
-		if ( pattern == null || pattern.isEmpty() ) { return asSystemDate(time) + "T" + asSystemTime(time); }
-		getSystemFormat().clear();
-		List<String> dateList = new ArrayList();
-		final Matcher m = system_pattern.matcher(pattern);
-		int i = 0;
-		while (m.find()) {
-			String tmp = m.group();
-			if ( i != m.start() ) {
-				dateList.add(pattern.substring(i, m.start()));
-			}
-			dateList.add(tmp);
-			i = m.end();
-		}
-		if ( i != pattern.length() ) {
-			dateList.add(pattern.substring(i));
-		}
-		for ( i = 0; i < dateList.size(); i++ ) {
-			String s = dateList.get(i);
-			if ( s.charAt(0) == '%' && s.length() == 2 ) {
-				Character c = s.charAt(1);
-				switch (c) {
-					case 'Y':
-						getSystemFormat().appendYear(4, 4);
-						break;
-					case 'M':
-						getSystemFormat().appendMonthOfYear(2);
-						break;
-					case 'N':
-						getSystemFormat().appendMonthOfYearText();
-						break;
-					case 'D':
-						getSystemFormat().appendDayOfMonth(2);
-						break;
-					case 'E':
-						getSystemFormat().appendDayOfWeekText();
-						break;
-					case 'h':
-						getSystemFormat().appendHourOfDay(2);
-						break;
-					case 'm':
-						getSystemFormat().appendMinuteOfHour(2);
-						break;
-					case 's':
-						getSystemFormat().appendSecondOfMinute(2);
-						break;
-					case 'z':
-						getSystemFormat().appendTimeZoneOffset(null, false, 1, 2);
-						break;
-					default:
-						getSystemFormat().appendLiteral(s);
-				}
-			} else {
-				getSystemFormat().appendLiteral(s);
-			}
-		}
-
-		DateTimeFormatter pf = getSystemFormat().toFormatter();
-		return pf.print((long) time);
-
-	}
-
-	@operator(value = "as_date", can_be_const = true, category = { IOperatorCategory.STRING, IOperatorCategory.TIME })
-	@doc(value = "converts a number of seconds in the model (for example, the value of the 'time' variable) into a string that represents the period elapsed since the beginning of the simulation with years, months and days following a standard pattern. GAMA uses a special calendar for internal model times, where months have 30 days and years 12 months. ",
-		usages = @usage(value = "used as an unary operator, it uses a defined pattern with years, months, days",
-			examples = @example(value = "as_date(22324234)", equals = "\"8 months, 18 days\"")))
-	public static
-		String asDate(final double time) {
-		PeriodType pt = PeriodType.yearMonthDayTime();
-		return getDateFormat().print(
-			new Period(new Duration((long) time * 1000), getChronology()).normalizedStandard(pt));
-	}
-
-	@operator(value = "as_time", can_be_const = true, category = { IOperatorCategory.STRING, IOperatorCategory.TIME })
-	@doc(value = "converts  a number of seconds in the model  (for example, the value of the 'time' variable)  into a string that represents the current number of hours, minutes and seconds of the period elapsed since the beginning of the simulation. As GAMA has no conception of time zones, the time is expressed as if the model was at GMT+00",
-		comment = "as_time operator is a particular case (using a particular pattern) of the as_date operator.",
-		examples = @example(value = "as_time(22324234)", equals = "\"09:10:34\""),
-		see = "as_date")
-	public static
-		String asTime(final double time) {
-		PeriodType pt = PeriodType.yearMonthDayTime();
-		return getTimeFormat().print(
-			new Period(new Duration((long) time * 1000), getChronology()).normalizedStandard(pt));
-	}
-
-	@operator(value = "as_system_time", can_be_const = true, category = { IOperatorCategory.STRING,
-		IOperatorCategory.TIME })
-	@doc(value = "converts  a value of milliseconds in the system  (for example, the value of the 'machine_time' variable)  into a string representing the current hours, minutes and seconds in the current time zone of the machine and the current Locale. This representation follows the ISO 8601 standard hh:mm:ss",
-		comment = "as_system_time operator is a particular case (using a particular pattern) of the as_system_date operator.",
-		examples = @example(value = "as_system_time(2147483647)", equals = "\"23:58:57\""),
-		see = "as_system_date")
-	public static
-		String asSystemTime(final double time) {
-		return getSystemTimeFormat().print((long) time);
-	}
-
-	@operator(value = "as_system_date", can_be_const = true, category = { IOperatorCategory.STRING,
-		IOperatorCategory.TIME })
-	@doc(value = "converts  a value of milliseconds in the system (for example, the value of the 'machine_time' variable)  into a string representing the current year, month and day in the current time zone of the machine and the current Locale. This representation follows the ISO 8601 standard yyyy-mm-dd",
-		comment = "as_system_date operator is a particular case (using a particular pattern) of the as_system_date operator.",
-		examples = @example(value = "as_system_date(2147483647)", equals = "\"2015-05-06\""),
-		see = "as_system_date")
-	public static
-		String asSystemDate(final double time) {
-		return getSystemDateFormat().print((long) time);
-	}
 
 }

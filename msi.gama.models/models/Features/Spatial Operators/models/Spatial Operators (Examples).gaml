@@ -1,9 +1,17 @@
+/**
+* Name: Spatial Operators
+* Author: Patrick Taillandier
+* Description: A model which shows how to use spatial operators like rotated_by, scaled_by and convex_hull
+* Tags: topology, shapefile, spatial_computation, spatial_transformation
+*/
 model example_spatial_operators
 
 global {
-	// Parameters
+	// Parameters for the shapefiles
 	file shape_file_name_init  <- file('../gis/init.shp') ;
-	file shape_file_name_background  <- file('../gis/background.shp');		
+	file shape_file_name_background  <- file('../gis/background.shp');
+	
+	//Parameters for the agents		
 	float dying_size min: 100.0  <-10000.0 ; 
 	float crossover_size min: 100.0  <- 1000.0;
 	float minimum_size min: 100.0 <- 500.0; 
@@ -20,24 +28,26 @@ global {
 	geometry shape <- envelope(shape_file_name_background);
 	
 
-	reflex stop when: empty ( people ) {
-		do halt;
+	reflex stop when: empty ( object ) {
+		do pause;
   	} 
 
 }
 
-species people topology: topology(shape_file_name_init) {
+species object topology: topology(shape_file_name_init) {
 	rgb color <- rgb ( [ rnd ( 255 ) , rnd ( 255 ) , rnd ( 255 ) ]);
 	point location_new_Ag <- nil;
 	rgb color_new_Ag <- nil;
 	int nb_last_rep <- 0;
 		
+	//Reflex making the shape of the agent growing and rotate it randomly
 	reflex evolve {
 		nb_last_rep <- nb_last_rep + 1;
 		shape <- shape scaled_by scaling_factor;
 		shape <- shape rotated_by ((rnd ( 100 * angle_rotation_max))/ 100.0);		
 	}
 	
+	//Make the agent move, kill it if is area is greater than the dying size or intersecting contours of the world
 	reflex move {
 		location <- location + { speed * ( 1 - rnd ( 2 ) ) , speed * ( 1 - rnd ( 2 ) ) };
 		if ( (shape.area > dying_size) or (shape intersects world.shape.contour)) {
@@ -46,9 +56,11 @@ species people topology: topology(shape_file_name_init) {
 			
 	}
 	
+	
+	//Reflex to change the shape of the agent intersects an other agent and create a convex hull of the shape of the new agent resulting in the intersection of the shapes of the agent and an other one
 	reflex crossover when: ( shape.area > crossover_size ) and ( nb_last_rep > time_wthout_co ) { 
 		int nb_partners  <- 0;
-		list<people> list_people <- shuffle ( people );
+		list<object> list_people <- shuffle ( object );
 		loop p over: list_people {
 			if ( p != self ) and ( nb_partners <= nb_partners_max ) and (rnd ( 100 ) < ( crossover_rate * 100 ) ) and ( (p.shape).area > crossover_size ) and ( p . nb_last_rep > time_wthout_co ) and (shape intersects p.shape) {
 				nb_partners <- nb_partners + 1;
@@ -58,7 +70,7 @@ species people topology: topology(shape_file_name_init) {
 					ask p {
 						nb_last_rep <- 0;
 					}
-					create people  {
+					create object  {
 						color <- (myself.color + p.color) / 2;
 						shape <-  convex_hull(new_ag);
 					}
@@ -66,7 +78,7 @@ species people topology: topology(shape_file_name_init) {
 			}
 		}	
 	}
-		
+	
 	aspect geometry {
 		draw shape color: color;
 	}
@@ -94,7 +106,7 @@ experiment example_spatial_operators type: gui {
 			graphics "background" {
 				draw world.shape color: rgb ([ 255 , 240 , 240 ]);
 			}
-			species people aspect: geometry;
+			species object aspect: geometry;
 		}
 	}
 }

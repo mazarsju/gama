@@ -50,7 +50,7 @@ public class GamlSwitch<T> extends Switch<T>
    * Checks whether this is a switch for the given package.
    * <!-- begin-user-doc -->
    * <!-- end-user-doc -->
-   * @parameter ePackage the package in question.
+   * @param ePackage the package in question.
    * @return whether this is a switch for the given package.
    * @generated
    */
@@ -87,14 +87,6 @@ public class GamlSwitch<T> extends Switch<T>
         if (result == null) result = defaultCase(theEObject);
         return result;
       }
-      case GamlPackage.ACTION_EDITOR:
-      {
-        ActionEditor actionEditor = (ActionEditor)theEObject;
-        T result = caseActionEditor(actionEditor);
-        if (result == null) result = caseEntry(actionEditor);
-        if (result == null) result = defaultCase(theEObject);
-        return result;
-      }
       case GamlPackage.MODEL:
       {
         Model model = (Model)theEObject;
@@ -109,6 +101,7 @@ public class GamlSwitch<T> extends Switch<T>
       {
         Block block = (Block)theEObject;
         T result = caseBlock(block);
+        if (result == null) result = caseEntry(block);
         if (result == null) result = defaultCase(theEObject);
         return result;
       }
@@ -118,6 +111,13 @@ public class GamlSwitch<T> extends Switch<T>
         T result = caseImport(import_);
         if (result == null) result = caseVarDefinition(import_);
         if (result == null) result = caseGamlDefinition(import_);
+        if (result == null) result = defaultCase(theEObject);
+        return result;
+      }
+      case GamlPackage.PRAGMA:
+      {
+        Pragma pragma = (Pragma)theEObject;
+        T result = casePragma(pragma);
         if (result == null) result = defaultCase(theEObject);
         return result;
       }
@@ -292,13 +292,6 @@ public class GamlSwitch<T> extends Switch<T>
         S_Solve s_Solve = (S_Solve)theEObject;
         T result = caseS_Solve(s_Solve);
         if (result == null) result = caseStatement(s_Solve);
-        if (result == null) result = defaultCase(theEObject);
-        return result;
-      }
-      case GamlPackage.SMONITOR:
-      {
-        S_Monitor s_Monitor = (S_Monitor)theEObject;
-        T result = caseS_Monitor(s_Monitor);
         if (result == null) result = defaultCase(theEObject);
         return result;
       }
@@ -735,22 +728,6 @@ public class GamlSwitch<T> extends Switch<T>
   }
 
   /**
-   * Returns the result of interpreting the object as an instance of '<em>Action Editor</em>'.
-   * <!-- begin-user-doc -->
-   * This implementation returns null;
-   * returning a non-null result will terminate the switch.
-   * <!-- end-user-doc -->
-   * @param object the target of the switch.
-   * @return the result of interpreting the object as an instance of '<em>Action Editor</em>'.
-   * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-   * @generated
-   */
-  public T caseActionEditor(ActionEditor object)
-  {
-    return null;
-  }
-
-  /**
    * Returns the result of interpreting the object as an instance of '<em>Model</em>'.
    * <!-- begin-user-doc -->
    * This implementation returns null;
@@ -794,6 +771,22 @@ public class GamlSwitch<T> extends Switch<T>
    * @generated
    */
   public T caseImport(Import object)
+  {
+    return null;
+  }
+
+  /**
+   * Returns the result of interpreting the object as an instance of '<em>Pragma</em>'.
+   * <!-- begin-user-doc -->
+   * This implementation returns null;
+   * returning a non-null result will terminate the switch.
+   * <!-- end-user-doc -->
+   * @param object the target of the switch.
+   * @return the result of interpreting the object as an instance of '<em>Pragma</em>'.
+   * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+   * @generated
+   */
+  public T casePragma(Pragma object)
   {
     return null;
   }
@@ -1098,22 +1091,6 @@ public class GamlSwitch<T> extends Switch<T>
    * @generated
    */
   public T caseS_Solve(S_Solve object)
-  {
-    return null;
-  }
-
-  /**
-   * Returns the result of interpreting the object as an instance of '<em>SMonitor</em>'.
-   * <!-- begin-user-doc -->
-   * This implementation returns null;
-   * returning a non-null result will terminate the switch.
-   * <!-- end-user-doc -->
-   * @param object the target of the switch.
-   * @return the result of interpreting the object as an instance of '<em>SMonitor</em>'.
-   * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-   * @generated
-   */
-  public T caseS_Monitor(S_Monitor object)
   {
     return null;
   }

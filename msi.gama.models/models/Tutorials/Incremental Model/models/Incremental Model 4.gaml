@@ -1,13 +1,16 @@
 /**
- *  model4
- *  This model illustrates how to use spatial operator
- */ 
+* Name: Movement on Graph
+* Author:
+* Description: 4th part of the tutorial : Incremental Model
+* Tags: graph
+*/
+ 
 model model4 
  
 global {
 	int nb_people <- 500;
 	float step <- 1 #minutes;
-	float infection_distance <- 2.0 #m;
+	float infection_distance <- 2.0 #m; 
 	float proba_infection <- 0.05;
 	int nb_infected_init <- 5;
 	file roads_shapefile <- file("../includes/road.shp");
@@ -23,10 +26,10 @@ global {
 	init {
 		create road from: roads_shapefile;
 		road_network <- as_edge_graph(road);
-		create building from: buildings_shapefile;
+		create building from: buildings_shapefile; 
 		create people number:nb_people {
 			speed <- 5.0 #km/#h;
-			building bd <- one_of(building);
+			building bd <- one_of(building); 
 			location <- any_location_in(bd);
 		}
 		ask nb_infected_init among people {
@@ -34,8 +37,8 @@ global {
 		}
 	}
 	reflex end_simulation when: infected_rate = 1.0 {
-		do halt;
-	}
+		do pause;
+	}  
 }
 
 species people skills:[moving]{		

@@ -1,7 +1,9 @@
 /**
- *  model1
- *  This model illustrates how to create simple agent and make them move in their environment.
- */
+* Name: Simple SI Model
+* Author:
+* Description: First part of the tutorial : Incremental Model
+* Tags:
+*/
 
 model SI_city
 
@@ -46,7 +48,7 @@ experiment main_experiment type:gui{
 	parameter "Proba infection" var: proba_infection min: 0.0 max: 1.0;
 	parameter "Nb people infected at init" var: nb_infected_init ;
 	output {
-		display map {
+		display map  {
 			species people aspect:circle;			
 		}
 	}

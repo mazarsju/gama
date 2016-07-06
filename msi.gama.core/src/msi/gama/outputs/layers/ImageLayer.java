@@ -1,31 +1,37 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'ImageLayer.java', in plugin 'msi.gama.application', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.outputs.layers;
 
-import java.awt.image.BufferedImage;
+import com.vividsolutions.jts.geom.Envelope;
+
 import msi.gama.common.interfaces.IGraphics;
-import msi.gama.common.util.ImageUtils;
+import msi.gama.metamodel.shape.GamaPoint;
 import msi.gama.runtime.IScope;
+import msi.gama.util.file.GamaGridFile;
+import msi.gama.util.file.GamaImageFile;
+import msi.gaml.statements.draw.FileDrawingAttributes;
 
 /**
  * Written by drogoul Modified on 9 nov. 2009
- * 
+ *
  * @todo Description
- * 
+ *
  */
 public class ImageLayer extends AbstractLayer {
 
-	BufferedImage image = null;
+	GamaImageFile file = null;
+	GamaGridFile grid = null;
 	private String imageFileName = "";
+	Envelope env = null;
 
 	public ImageLayer(final IScope scope, final ILayerStatement layer) {
 		super(layer);
@@ -33,26 +39,37 @@ public class ImageLayer extends AbstractLayer {
 	}
 
 	protected void buildImage(final IScope scope) {
-		String newImage = ((ImageLayerStatement) definition).getImageFileName();
-		if ( imageFileName != null && imageFileName.equals(newImage) ) { return; }
+		final String newImage = ((ImageLayerStatement) definition).getImageFileName();
+		if (imageFileName != null && imageFileName.equals(newImage)) {
+			return;
+		}
 		imageFileName = newImage;
-		if ( imageFileName == null || imageFileName.length() == 0 ) {
-			image = null;
+		if (imageFileName == null || imageFileName.length() == 0) {
+			file = null;
+			grid = null;
 		} else {
-			try {
-				image = ImageUtils.getInstance().getImageFromFile(scope, imageFileName);
-			} catch (Exception e) {
-				image = null;
-				e.printStackTrace();
+			file = new GamaImageFile(scope, imageFileName);
+			env = file.getGeoDataFile() == null ? null : file.computeEnvelope(scope);
+			if (!file.isGeoreferenced()) {
+				env = null;
 			}
 		}
 	}
 
 	@Override
 	public void privateDrawDisplay(final IScope scope, final IGraphics dg) {
+		if (dg.cannotDraw())
+			return;
 		buildImage(scope);
-		if ( image == null ) { return; }
-		dg.drawImage(scope, image, null, null, null, null, false, null);
+		if (file == null) {
+			return;
+		}
+		final GamaPoint loc = env == null ? new GamaPoint(0, 0) : new GamaPoint(env.getMinX(), env.getMinY());
+		final FileDrawingAttributes attributes = new FileDrawingAttributes(loc);
+		if (env != null) {
+			attributes.size = new GamaPoint(env.getWidth(), env.getHeight());
+		}
+		dg.drawFile(file, attributes);
 	}
 
 	@Override

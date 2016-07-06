@@ -11,18 +11,26 @@
  **********************************************************************************************/
 package msi.gama.outputs;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
+
 import msi.gama.common.interfaces.IKeyword;
-import msi.gama.common.util.GuiUtils;
-import msi.gama.kernel.experiment.*;
+import msi.gama.kernel.experiment.IExperimentPlan;
+import msi.gama.kernel.experiment.ParametersSet;
 import msi.gama.precompiler.GamlAnnotations.doc;
 import msi.gama.precompiler.GamlAnnotations.facet;
 import msi.gama.precompiler.GamlAnnotations.facets;
 import msi.gama.precompiler.GamlAnnotations.inside;
 import msi.gama.precompiler.GamlAnnotations.symbol;
-import msi.gama.precompiler.*;
+import msi.gama.precompiler.IConcept;
+import msi.gama.precompiler.ISymbolKind;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gama.util.GAML;
@@ -37,35 +45,27 @@ import msi.gaml.types.IType;
  *
  * @author drogoul
  */
-@symbol(name = IKeyword.OUTPUT_FILE, kind = ISymbolKind.OUTPUT, with_sequence = false)
+@symbol(name = IKeyword.OUTPUT_FILE, kind = ISymbolKind.OUTPUT, with_sequence = false, concept = { IConcept.FILE,
+		IConcept.SAVE_FILE })
 @inside(symbols = { IKeyword.OUTPUT, IKeyword.PERMANENT })
 @facets(value = {
-	@facet(name = IKeyword.NAME, type = IType.ID, optional = false),
-	@facet(name = IKeyword.DATA, type = IType.STRING, optional = false),
-	@facet(name = IKeyword.REFRESH_EVERY,
-		type = IType.INT,
-		optional = true,
-		doc = @doc(value = "Allows to save the file every n time steps (default is 1)",
-			deprecated = "Use refresh: every(n) instead")),
-	@facet(name = IKeyword.REFRESH,
-		type = IType.BOOL,
-		optional = true,
-		doc = @doc("Indicates the condition under which this file should be saved (default is true)")),
-	@facet(name = IKeyword.HEADER, type = IType.STRING, optional = true),
-	@facet(name = IKeyword.FOOTER, type = IType.STRING, optional = true),
-	@facet(name = IKeyword.REWRITE, type = IType.BOOL, optional = true),
-	@facet(name = IKeyword.TYPE,
-		type = IType.ID,
-		values = { IKeyword.CSV, IKeyword.TEXT, IKeyword.XML },
-		optional = true) }, omissible = IKeyword.NAME)
+		@facet(name = IKeyword.NAME, type = IType.ID, optional = false, doc = @doc(value = "The name of the file where you want to export the data")),
+		@facet(name = IKeyword.DATA, type = IType.STRING, optional = false, doc = @doc(value = "The data you want to export")),
+		@facet(name = IKeyword.REFRESH_EVERY, type = IType.INT, optional = true, doc = @doc(value = "Allows to save the file every n time steps (default is 1)", deprecated = "Use refresh: every(n) instead")),
+		@facet(name = IKeyword.REFRESH, type = IType.BOOL, optional = true, doc = @doc("Indicates the condition under which this file should be saved (default is true)")),
+		@facet(name = IKeyword.HEADER, type = IType.STRING, optional = true, doc = @doc(value = "Define a header for your export file")),
+		@facet(name = IKeyword.FOOTER, type = IType.STRING, optional = true, doc = @doc(value = "Define a footer for your export file")),
+		@facet(name = IKeyword.REWRITE, type = IType.BOOL, optional = true, doc = @doc(value = "Rewrite or not the existing file")),
+		@facet(name = IKeyword.TYPE, type = IType.ID, values = { IKeyword.CSV, IKeyword.TEXT,
+				IKeyword.XML }, optional = true, doc = @doc(value = "The type of your output data")) }, omissible = IKeyword.NAME)
 public class FileOutput extends AbstractOutput {
 
-	final static SimpleDateFormat sdf = new SimpleDateFormat("_yyyy_MM_dd_HH_mm_ss");
-
 	/**
-	 * @throws GamaRuntimeException The Constructor.
+	 * @throws GamaRuntimeException
+	 *             The Constructor.
 	 *
-	 * @param sim the sim
+	 * @param sim
+	 *            the sim
 	 */
 	public FileOutput(/* final ISymbol context, */final IDescription desc) {
 		super(desc);
@@ -99,13 +99,15 @@ public class FileOutput extends AbstractOutput {
 	private void createExpression() {
 		data = getFacet(IKeyword.DATA);
 		expressionText = data.serialize(false);
-		if ( expressionText == null ) { return; }
+		if (expressionText == null) {
+			return;
+		}
 		refreshExpression();
 	}
 
 	private void createHeader() throws GamaRuntimeException {
 		final IExpression exp = getFacet(IKeyword.HEADER);
-		if ( exp == null ) {
+		if (exp == null) {
 			setHeader(getHeader());
 		} else {
 			setHeader(Cast.asString(getScope(), exp.value(getScope())));
@@ -114,7 +116,7 @@ public class FileOutput extends AbstractOutput {
 
 	private void createFooter() throws GamaRuntimeException {
 		final IExpression exp = getFacet(IKeyword.FOOTER);
-		if ( exp == null ) {
+		if (exp == null) {
 			setFooter(getFooter());
 		} else {
 			setFooter(Cast.asString(getScope(), exp.value(getScope())));
@@ -123,7 +125,7 @@ public class FileOutput extends AbstractOutput {
 
 	private void createRewrite() throws GamaRuntimeException {
 		final IExpression exp = getFacet(IKeyword.REWRITE);
-		if ( exp == null ) {
+		if (exp == null) {
 			setRewrite(false);
 		} else {
 			setRewrite(Cast.asBool(getScope(), exp.value(getScope())));
@@ -132,7 +134,7 @@ public class FileOutput extends AbstractOutput {
 
 	@Override
 	public void dispose() {
-		if ( isOpen() ) {
+		if (isOpen()) {
 			close();
 		}
 		writer = null;
@@ -148,16 +150,16 @@ public class FileOutput extends AbstractOutput {
 			e.printStackTrace();
 		}
 		switch (type) {
-			case TEXT:
-				getWriter().println(getHeader());
-				getWriter().flush();
-				break;
-			case XML:
-				getWriter().println(XMLHeader);
-				getWriter().println("<" + getName() + ">");
-				getWriter().flush();
-				break;
-			default:
+		case TEXT:
+			getWriter().println(getHeader());
+			getWriter().flush();
+			break;
+		case XML:
+			getWriter().println(XMLHeader);
+			getWriter().println("<" + getName() + ">");
+			getWriter().flush();
+			break;
+		default:
 		}
 
 		super.open();
@@ -165,21 +167,21 @@ public class FileOutput extends AbstractOutput {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see msi.gama.outputs.AbstractOutput#close()
 	 */
 	@Override
 	public void close() {
 		switch (type) {
-			case TEXT:
-				getWriter().println(getFooter());
-				getWriter().flush();
-				break;
-			case XML:
-				getWriter().println("</" + getName() + ">");
-				getWriter().flush();
-				break;
-			default:
+		case TEXT:
+			getWriter().println(getFooter());
+			getWriter().flush();
+			break;
+		case XML:
+			getWriter().println("</" + getName() + ">");
+			getWriter().flush();
+			break;
+		default:
 		}
 		writer.flush();
 		writer.close();
@@ -188,11 +190,13 @@ public class FileOutput extends AbstractOutput {
 
 	@Override
 	public boolean init(final IScope scope) throws GamaRuntimeException {
-		boolean result = super.init(scope);
-		if ( !result ) { return false; }
+		final boolean result = super.init(scope);
+		if (!result) {
+			return false;
+		}
 		createType();
-		createFileName(scope);
 		createRewrite();
+		createFileName(scope);
 		createHeader();
 		createFooter();
 		createExpression();
@@ -200,12 +204,13 @@ public class FileOutput extends AbstractOutput {
 	}
 
 	public FileOutput(final String name, final String expr, final List<String> columns, final IExperimentPlan exp)
-		throws GamaRuntimeException {
+			throws GamaRuntimeException {
 		// WARNING Created by the batch. Is it still necessary to keep this ?
-		// TODO Should be deprecated in favor of a regular file output in the permanent
+		// TODO Should be deprecated in favor of a regular file output in the
+		// permanent
 		// outputs of the experiment.
 		super(DescriptionFactory.create(IKeyword.FILE, IKeyword.DATA, expr, IKeyword.TYPE, IKeyword.CSV, IKeyword.NAME,
-			name == null ? expr : name));
+				name == null ? expr : name));
 		// prepare(exp);
 		expressionText = expr;
 		refreshExpression();
@@ -215,7 +220,8 @@ public class FileOutput extends AbstractOutput {
 		this.writeHeaderAndClose();
 	}
 
-	// public void prepare(final IExperimentPlan exp) throws GamaRuntimeException {
+	// public void prepare(final IExperimentPlan exp) throws
+	// GamaRuntimeException {
 	// // FIXME Verify this scope
 	// setScope(GAMA.obtainNewScope());
 	// outputManager = exp.getOutputManager();
@@ -227,22 +233,25 @@ public class FileOutput extends AbstractOutput {
 	// }
 
 	/**
-	 * @throws GamaRuntimeException Creates a file name.
+	 * @throws GamaRuntimeException
+	 *             Creates a file name.
 	 */
 	private void createFileName(final IScope scope) throws GamaRuntimeException {
 		this.fileName = getName();
 		final String dir = scope.getExperiment().getWorkingPath() + "/" + LOG_FOLDER + "/";
 		final File logFolder = new File(dir);
-		if ( !logFolder.exists() ) {
-			final boolean isCreated = logFolder.mkdir();
-			if ( !isCreated ) {
-				GuiUtils.error("Impossible to create " + dir);
+		if (!logFolder.exists()) {
+			final boolean isCreated = logFolder.mkdirs();
+			if (!isCreated) {
+				scope.getGui().error("Impossible to create " + dir);
 			}
 		}
 
 		file = new File(dir, fileName + "." + extensions.get(type));
 		final boolean exist = file.exists();
-		if ( exist && !getRewrite() ) {
+
+		if (exist && !getRewrite()) {
+			final SimpleDateFormat sdf = new SimpleDateFormat("_yyyy_MM_dd_HH_mm_ss");
 			this.fileName = fileName + sdf.format(Calendar.getInstance().getTime());
 		}
 		file = new File(dir, fileName + "." + extensions.get(type));
@@ -253,8 +262,13 @@ public class FileOutput extends AbstractOutput {
 		}
 	}
 
+	public File getFile() {
+		return file;
+	}
+
 	public void refreshExpression() throws GamaRuntimeException {
-		// in case the file writer persists over different simulations (like in the batch)
+		// in case the file writer persists over different simulations (like in
+		// the batch)
 		data = GAML.getExpressionFactory().createExpr(expressionText, GAML.getModelContext());
 	}
 
@@ -264,7 +278,10 @@ public class FileOutput extends AbstractOutput {
 
 	@Override
 	public boolean step(final IScope scope) {
-		if ( getScope().interrupted() ) { return false; }
+		if (getScope().interrupted()) {
+			return false;
+		}
+		getScope().setCurrentSymbol(this);
 		setLastValue(data.value(getScope()));
 		return true;
 	}
@@ -276,65 +293,69 @@ public class FileOutput extends AbstractOutput {
 
 	public void doRefreshWriteAndClose(final ParametersSet sol, final Object fitness) throws GamaRuntimeException {
 		setSolution(sol);
-		if ( fitness == null ) {
-			if ( !getScope().step(this) ) { return; }
+		if (fitness == null) {
+			if (!getScope().step(this)) {
+				return;
+			}
 		} else {
 			setLastValue(fitness);
 		}
 		// compute(getOwnScope(), 0l);
 		FileWriter fileWriter;
 		switch (type) {
-			case XML:
-				break;
-			case TEXT:
-				try {
-					fileWriter = new FileWriter(file, true);
-					if ( getLastValue() != null ) {
-						fileWriter.write(getLastValue().toString());
-					}
-					fileWriter.flush();
-					fileWriter.close();
-				} catch (final IOException e) {
-					e.printStackTrace();
+		case XML:
+			break;
+		case TEXT:
+			try {
+				fileWriter = new FileWriter(file, true);
+				if (getLastValue() != null) {
+					fileWriter.write(getLastValue().toString());
 				}
-				break;
-			case CSV:
-				if ( solution == null ) { return; }
-				final StringBuilder s = new StringBuilder(loggedBatchParam.size() * 8);
-				for ( final String var : loggedBatchParam ) {
-					s.append(solution.get(var)).append(',');
-				}
-				if ( lastValue != null ) {
-					s.append(lastValue);
-				} else {
-					s.setLength(s.length() - 1);
-				}
-				s.append(System.getProperty("line.separator"));
-				try {
-					fileWriter = new FileWriter(file, true);
-					fileWriter.write(s.toString());
-					fileWriter.flush();
-					fileWriter.close();
-				} catch (final IOException e) {
-					e.printStackTrace();
-				}
+				fileWriter.flush();
+				fileWriter.close();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+			break;
+		case CSV:
+			if (solution == null) {
+				return;
+			}
+			final StringBuilder s = new StringBuilder(loggedBatchParam.size() * 8);
+			for (final String var : loggedBatchParam) {
+				s.append(solution.get(var)).append(',');
+			}
+			if (lastValue != null) {
+				s.append(lastValue);
+			} else {
+				s.setLength(s.length() - 1);
+			}
+			s.append(System.getProperty("line.separator"));
+			try {
+				fileWriter = new FileWriter(file, true);
+				fileWriter.write(s.toString());
+				fileWriter.flush();
+				fileWriter.close();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
 
-				break;
+			break;
 		}
 	}
 
 	void writeToFile(final long cycle) {
 		switch (type) {
-			case CSV:
-			case TEXT:
-				getWriter().println(getLastValue());
-				getWriter().flush();
-				break;
-			case XML:
-				getWriter().println("<data step=\"" + cycle + "\" value=\"" + getLastValue() + "\" />");
-				getWriter().flush();
-				break;
-			default:
+		case CSV:
+		case TEXT:
+			getWriter().println(getLastValue());
+			getWriter().flush();
+			break;
+		case XML:
+			getWriter().println("<data step=\"" + cycle + "\" value=\"" + getLastValue() + "\" />");
+			getWriter().flush();
+			break;
+		default:
 		}
 	}
 
@@ -347,7 +368,8 @@ public class FileOutput extends AbstractOutput {
 	}
 
 	private String getHeader() {
-		if ( header == null ) {
+		if (header == null) {
+			final SimpleDateFormat sdf = new SimpleDateFormat("_yyyy_MM_dd_HH_mm_ss");
 			setHeader(getName() + " " + sdf.format(Calendar.getInstance().getTime()));
 		}
 		return header;
@@ -358,14 +380,15 @@ public class FileOutput extends AbstractOutput {
 	}
 
 	private String getFooter() {
-		if ( footer == null ) {
+		if (footer == null) {
+			final SimpleDateFormat sdf = new SimpleDateFormat("_yyyy_MM_dd_HH_mm_ss");
 			setFooter("End of " + getName() + " " + sdf.format(Calendar.getInstance().getTime()));
 		}
-		return header;
+		return footer;
 	}
 
-	private void setFooter(final String header) {
-		this.header = header;
+	private void setFooter(final String footer) {
+		this.footer = footer;
 	}
 
 	private PrintWriter getWriter() {
@@ -399,44 +422,45 @@ public class FileOutput extends AbstractOutput {
 	public void writeHeaderAndClose() {
 		FileWriter fileWriter;
 		switch (type) {
-			case XML:
-				break;
-			case TEXT:
-				try {
-					fileWriter = new FileWriter(file);
-					fileWriter.write(getHeader());
-					fileWriter.flush();
-					fileWriter.close();
-				} catch (final IOException e) {
-					e.printStackTrace();
-				}
-				break;
-			case CSV:
-				final StringBuilder s = new StringBuilder(loggedBatchParam.size() * 8);
-				for ( final String var : loggedBatchParam ) {
-					s.append(var).append(',');
-				}
-				if ( getFacet(IKeyword.DATA) != null ) {
-					s.append(getLiteral(IKeyword.DATA));
-				} else {
-					s.setLength(s.length() - 1);
-				}
-				s.append(System.getProperty("line.separator"));
-				try {
-					fileWriter = new FileWriter(file);
-					fileWriter.write(s.toString());
-					fileWriter.flush();
-					fileWriter.close();
-				} catch (final IOException e) {
-					e.printStackTrace();
-				}
-				break;
+		case XML:
+			break;
+		case TEXT:
+			try {
+				fileWriter = new FileWriter(file);
+				fileWriter.write(getHeader());
+				fileWriter.flush();
+				fileWriter.close();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+			break;
+		case CSV:
+			final StringBuilder s = new StringBuilder(loggedBatchParam.size() * 8);
+			for (final String var : loggedBatchParam) {
+				s.append(var).append(',');
+			}
+			if (getFacet(IKeyword.DATA) != null) {
+				s.append(getLiteral(IKeyword.DATA));
+			} else {
+				s.setLength(s.length() - 1);
+			}
+			s.append(System.getProperty("line.separator"));
+			try {
+				fileWriter = new FileWriter(file);
+				fileWriter.write(s.toString());
+				fileWriter.flush();
+				fileWriter.close();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+			break;
 		}
 	}
 
 	// @Override
 	// public void setType(final String t) {
-	// type = t.equals(IKeyword.CSV) ? CSV : t.equals(IKeyword.XML) ? XML : TEXT;
+	// type = t.equals(IKeyword.CSV) ? CSV : t.equals(IKeyword.XML) ? XML :
+	// TEXT;
 	// }
 
 }

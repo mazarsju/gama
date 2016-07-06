@@ -1,34 +1,35 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'OperatorProto.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.descriptions;
 
-import gnu.trove.set.hash.THashSet;
 import java.lang.reflect.*;
 import java.util.*;
+import org.eclipse.emf.ecore.EObject;
+import gnu.trove.set.hash.THashSet;
 import msi.gama.common.interfaces.IGamlIssue;
-import msi.gama.precompiler.GamlAnnotations.operator;
 import msi.gama.precompiler.*;
+import msi.gama.precompiler.GamlAnnotations.operator;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
-import msi.gaml.compilation.GamaHelper;
+import msi.gaml.compilation.*;
 import msi.gaml.expressions.*;
 import msi.gaml.types.*;
 
 /**
  * Class OperatorProto.
- * 
+ *
  * @author drogoul
  * @since 7 avr. 2014
- * 
+ *
  */
 public class OperatorProto extends AbstractProto {
 
@@ -36,8 +37,8 @@ public class OperatorProto extends AbstractProto {
 	public static Set<String> binaries = new THashSet(Arrays.asList("=", "+", "-", "/", "*", "^", "<", ">", "<=", ">=",
 		"?", "!=", ":", ".", "where", "select", "collect", "first_with", "last_with", "overlapping", "at_distance",
 		"in", "inside", "among", "contains", "contains_any", "contains_all", "min_of", "max_of", "with_max_of",
-		"with_min_of", "of_species", "of_generic_species", "sort_by", "accumulate", "or", "and", "at", "is",
-		"group_by", "index_of", "last_index_of", "index_by", "count", "sort", "::", "as_map"));
+		"with_min_of", "of_species", "of_generic_species", "sort_by", "accumulate", "or", "and", "at", "is", "group_by",
+		"index_of", "last_index_of", "index_by", "count", "sort", "::", "as_map"));
 
 	public final boolean isVarOrField, canBeConst;
 	public final IType returnType;
@@ -47,7 +48,7 @@ public class OperatorProto extends AbstractProto {
 	public final int typeProvider, contentTypeProvider, keyTypeProvider;
 	public final int[] expectedContentType;
 
-	public IExpression create(final IDescription context, final IExpression ... exprs) {
+	public IExpression create(final IDescription context, final EObject currentEObject, final IExpression ... exprs) {
 		try {
 
 			switch (signature.size()) {
@@ -70,16 +71,22 @@ public class OperatorProto extends AbstractProto {
 		} catch (GamaRuntimeException e) {
 			// this can happen when optimizing the code
 			// in that case, report an error and return null as it means that the code is not functional
-			context.error("This code is not functional: " + e.getMessage(), IGamlIssue.GENERAL, getName());
+			context.error("This code is not functional: " + e.getMessage(), IGamlIssue.GENERAL, currentEObject);
+			return null;
+		} catch (Exception e) {
+			// this can happen when optimizing the code
+			// in that case, report an error and return null as it means that the code is not functional
+			context.error("The compiler encountered an internal error: " + e.getMessage(), IGamlIssue.GENERAL,
+				currentEObject);
 			return null;
 		}
 	}
 
-	public OperatorProto(final String name, final AccessibleObject method, final GamaHelper helper,
+	public OperatorProto(final String name, final AnnotatedElement method, final GamaHelper helper,
 		final boolean canBeConst, final boolean isVarOrField, /* final int doc, */final IType returnType,
 		final Signature signature, final boolean lazy, final int typeProvider, final int contentTypeProvider,
-		final int keyTypeProvider, final int[] expectedContentType) {
-		super(name, method);
+		final int keyTypeProvider, final int[] expectedContentType, final String plugin) {
+		super(name, method, plugin);
 		this.returnType = returnType;
 		this.canBeConst = canBeConst;
 		this.isVarOrField = isVarOrField;
@@ -111,12 +118,13 @@ public class OperatorProto extends AbstractProto {
 		return result;
 	}
 
-	public OperatorProto(final String name, final AccessibleObject method, final GamaHelper helper,
+	public OperatorProto(final String name, final AnnotatedElement method, final GamaHelper helper,
 		final boolean canBeConst, final boolean isVarOrField, /* final int doc, */final int returnType,
 		final Class signature, final boolean lazy, final int typeProvider, final int contentTypeProvider,
 		final int keyTypeProvider, final int[] expectedContentType) {
-		this(name, method, helper, canBeConst, isVarOrField, /* doc, */Types.get(returnType), new Signature(signature),
-			lazy, typeProvider, contentTypeProvider, keyTypeProvider, expectedContentType);
+		this(name, method == null ? signature : method, helper, canBeConst, isVarOrField,
+			/* doc, */Types.get(returnType), new Signature(signature), lazy, typeProvider, contentTypeProvider,
+			keyTypeProvider, expectedContentType, GamaBundleLoader.CURRENT_PLUGIN_NAME);
 	}
 
 	public void setSignature(final IType ... t) {
@@ -134,8 +142,8 @@ public class OperatorProto extends AbstractProto {
 				return;
 			}
 		} else if ( signature.isUnary() ) {
-			for ( int i = 0; i < expectedContentType.length; i++ ) {
-				if ( rightType.isTranslatableInto(Types.get(expectedContentType[i])) ) { return; }
+			for ( int element : expectedContentType ) {
+				if ( rightType.isTranslatableInto(Types.get(element)) ) { return; }
 			}
 			context.error("Operator " + getName() + " expects arguments of type " + rightType, IGamlIssue.WRONG_TYPE);
 		}
@@ -190,6 +198,12 @@ public class OperatorProto extends AbstractProto {
 				return name + "(" + signature.asPattern(withVariables) + ")";
 			}
 		}
+	}
+
+	@Override
+	public void collectMetaInformation(final GamlProperties meta) {
+		super.collectMetaInformation(meta);
+		meta.put(GamlProperties.OPERATORS, name);
 	}
 
 }

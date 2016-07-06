@@ -22,5 +22,8 @@ release/*
 .DS_Store
 *.history
 *.class
+.metadata/
+.metadata/*
 /*/gaml/
 /*/bin/
+msi.gama.ext/lib/

@@ -1,10 +1,8 @@
 /**
- *  Author: Truong Minh Thai (thai.truongminh@gmail.com)
- *  Description: 
- * 		Create a spatial table in Sqlite
- * 	See:
- * 		SQLite_Agent2DB and SQLite_libspatialite models
- *      
+* Name:  CreateBuildingTableSQLite
+* Author: Truong Minh Thai
+* Description: This model shows how to create a database and a table in SQLite using GAMA
+ * Tags: database
  */
 
 model SQLite_selectNUpdate
@@ -13,6 +11,8 @@ global {
 	map PARAMS <- ['dbtype'::'sqlite','database'::'../../includes/spatialite.db'];
 
 	init {
+		write "This model will work only if the corresponding database is installed" color: #red;
+
 		create dummy ;
 		ask (dummy)	
 		{ 
@@ -30,16 +30,12 @@ global {
                    " name TEXT NOT NULL," +
                    " type TEXT NOT NULL," +
                    " geom BLOB NOT NULL); "  ;
- 			 	
-		
-					
+
 		}
 	}
 }  
-entities {  
-	species dummy skills: [SQLSKILL] {  
-	} 
-} 
+
+species dummy skills: [SQLSKILL] { } 
 
 experiment default_expr type:gui {
 

@@ -1,26 +1,27 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'GamaTextFile.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.util.file;
 
 import java.io.*;
 import java.net.*;
+import com.vividsolutions.jts.geom.Envelope;
 import msi.gama.precompiler.GamlAnnotations.file;
+import msi.gama.precompiler.IConcept;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gama.util.*;
 import msi.gaml.types.*;
-import com.vividsolutions.jts.geom.Envelope;
 
-@file(name = "URL", extensions = { "txt" }, buffer_type = IType.LIST, buffer_content = IType.STRING)
+@file(name = "URL", extensions = { "url" }, buffer_type = IType.LIST, buffer_content = IType.STRING, concept = { IConcept.TEXT, IConcept.FILE })
 public class URLFile extends GamaFile<IList<String>, String, Integer, String> {
 
 	private final String URL;
@@ -49,7 +50,7 @@ public class URLFile extends GamaFile<IList<String>, String, Integer, String> {
 	@Override
 	public IList<String> getAttributes(final IScope scope) {
 		// TODO Dont know what to return
-		return GamaListFactory.EMPTY_LIST;
+		return GamaListFactory.create();
 	}
 
 	public IList<String> getURLContent(final String u_str) {
@@ -97,7 +98,7 @@ public class URLFile extends GamaFile<IList<String>, String, Integer, String> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see msi.gama.util.GamaFile#fillBuffer()
 	 */
 	@Override
@@ -105,18 +106,18 @@ public class URLFile extends GamaFile<IList<String>, String, Integer, String> {
 		if ( getBuffer() != null ) { return; }
 
 		setBuffer(getURLContent(this.URL));
-		// GuiUtils.informConsole(""+getURLContent(this.URL));
+		// scope.getGui().informConsole(""+getURLContent(this.URL));
 
 	}
 
-	private static String computeVariable(final String string) {
-		String[] tokens = string.split("<-");
-		return tokens[0];
-	}
+	// private static String computeVariable(final String string) {
+	// String[] tokens = string.split("<-");
+	// return tokens[0];
+	// }
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see msi.gama.util.GamaFile#flushBuffer()
 	 */
 	@Override

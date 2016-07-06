@@ -1,79 +1,186 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'CameraArcBall.java', in plugin 'msi.gama.jogl2', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package ummisco.gama.opengl.camera;
 
 import java.awt.Point;
-import msi.gama.metamodel.shape.Envelope3D;
-import msi.gaml.operators.Maths;
+
 import org.eclipse.swt.SWT;
-import ummisco.gama.opengl.JOGLRenderer;
+
+import msi.gama.common.GamaPreferences;
+import msi.gama.metamodel.shape.Envelope3D;
+import msi.gama.metamodel.shape.GamaPoint;
+import msi.gama.metamodel.shape.ILocation;
+import msi.gama.metamodel.shape.IShape;
+import msi.gama.outputs.LayeredDisplayData;
+import msi.gaml.operators.Maths;
+import msi.gaml.operators.fastmaths.FastMath;
+import ummisco.gama.opengl.Abstract3DRenderer;
+import ummisco.gama.ui.bindings.GamaKeyBindings;
 
 public class CameraArcBall extends AbstractCamera {
 
 	private double radius;
-	private double horizInertia;
-	private double vertInertia = 0;
 
-	private double velocityHoriz;
-	private double velocityVert = 0;
+	private final boolean isDrawingRotateHelper = GamaPreferences.DRAW_ROTATE_HELPER.getValue();
 
-	// inertia parameter
-	private final double damping = 0.9;
-	private final double amplitude = 0.3;
-	private boolean enableInertia = false;
-	private boolean arcBallInertia = false;
-	private boolean moveInertia = false;
-
-	public CameraArcBall(final JOGLRenderer joglawtglRenderer) {
+	public CameraArcBall(final Abstract3DRenderer joglawtglRenderer) {
 		super(joglawtglRenderer);
-		phi = 90.00;
-		theta = 360.00;
-		updateCartesianCoordinatesFromAngles();
-	}
-
-	// Use when the alt+right/left is pressed (rotate the camera upvector around z axis).
-	public void rotateCameraUpVectorOnZ(final boolean clock) {
-		upPosition(Math.cos(Math.PI / 2 + curZRotation), Math.sin(Math.PI / 2 + curZRotation), upVector.z);
-		if ( clock ) {
-			curZRotation = curZRotation - Math.PI / 64;
-		} else {
-			curZRotation = curZRotation + Math.PI / 64;
-		}
+		reset();
 	}
 
 	protected void updateCartesianCoordinatesFromAngles() {
 		theta = theta % 360;
 		phi = phi % 360;
-		double factorT = theta * factor;
-		double factorP = phi * factor;
-		double cosT = Math.cos(factorT);
-		double sinT = Math.sin(factorT);
-		double cosP = Math.cos(factorP);
-		double sinP = Math.sin(factorP);
-		position.setLocation(radius * sinT * sinP + target.x, radius * cosP + target.y, radius * cosT * sinP + target.z);
+
+		if (phi <= 0) {
+			phi = 0.1;
+		}
+		if (phi >= 180) {
+			phi = 179.9;
+		}
+		final double factorT = theta * Maths.toRad;
+		final double factorP = phi * Maths.toRad;
+		final double cosT = FastMath.cos(factorT);
+		final double sinT = FastMath.sin(factorT);
+		final double cosP = FastMath.cos(factorP);
+		final double sinP = FastMath.sin(factorP);
+		position.setLocation(radius * cosT * sinP + target.x, radius * sinT * sinP + target.y,
+				radius * cosP + target.z);
 	}
 
 	@Override
 	public void updateSphericalCoordinatesFromLocations() {
-		double x = position.x - target.x;
-		double y = position.y - target.y;
-		double z = position.z - target.z;
-		radius = Math.sqrt(x * x + y * y + z * z);
-		theta = Maths.toDeg * Math.atan2(x, z);
-		phi = Maths.toDeg * Math.acos(y/ radius);
-		if(upVector.getY() == -1){
-			phi= 360.0-phi;	
-			theta= 180+theta;
+		final double x = position.x - target.x;
+		final double y = position.y - target.y;
+		final double z = position.z - target.z;
+
+		radius = FastMath.sqrt(x * x + y * y + z * z);
+		theta = Maths.toDeg * FastMath.atan2(y, x);
+		phi = Maths.toDeg * FastMath.acos(z / radius);
+	}
+
+	public void translateCameraFromScreenPlan(final double x_translation_in_screen,
+			final double y_translation_in_screen) {
+
+		final double theta_vect_x = -FastMath.sin(theta * Maths.toRad);
+		final double theta_vect_y = FastMath.cos(theta * Maths.toRad);
+		final double theta_vect_z = 0;
+		final double theta_vect_ratio = x_translation_in_screen
+				/ (theta_vect_x * theta_vect_x + theta_vect_y * theta_vect_y + theta_vect_z * theta_vect_z);
+		final double theta_vect_x_norm = theta_vect_x * theta_vect_ratio;
+		final double theta_vect_y_norm = theta_vect_y * theta_vect_ratio;
+		final double theta_vect_z_norm = theta_vect_z * theta_vect_ratio;
+
+		upPosition(
+				-FastMath.cos(theta * Maths.toRad) * FastMath.cos(phi * Maths.toRad)
+						* FastMath.cos(upVectorAngle * Maths.toRad)
+						- FastMath.sin(theta * Maths.toRad) * FastMath.sin(upVectorAngle * Maths.toRad),
+				-FastMath.sin(theta * Maths.toRad) * FastMath.cos(phi * Maths.toRad)
+						* FastMath.cos(upVectorAngle * Maths.toRad
+								+ FastMath.cos(theta * Maths.toRad) * FastMath.sin(upVectorAngle * Maths.toRad)),
+				FastMath.sin(phi * Maths.toRad) * FastMath.cos(upVectorAngle * Maths.toRad));
+
+		final double phi_vect_x = FastMath.cos(theta * Maths.toRad) * FastMath.cos(phi * Maths.toRad);
+		final double phi_vect_y = FastMath.sin(theta * Maths.toRad) * FastMath.cos(phi * Maths.toRad);
+		final double phi_vect_z = -FastMath.sin(phi * Maths.toRad);
+		final double phi_vect_ratio = y_translation_in_screen
+				/ (phi_vect_x * phi_vect_x + phi_vect_y * phi_vect_y + phi_vect_z * phi_vect_z);
+		final double phi_vect_x_norm = phi_vect_x * phi_vect_ratio;
+		final double phi_vect_y_norm = phi_vect_y * phi_vect_ratio;
+		final double phi_vect_z_norm = phi_vect_z * phi_vect_ratio;
+
+		final double x_translation_in_world = theta_vect_x_norm + phi_vect_x_norm;
+		final double y_translation_in_world = theta_vect_y_norm + phi_vect_y_norm;
+		final double z_translation_in_world = theta_vect_z_norm + phi_vect_z_norm;
+
+		// double zoom = zoomLevel()*4; // the factor 4 makes the translation a
+		// bit slower. Maybe a future change of this value to make it more
+		// "mathematics" should be better.
+		updatePosition(position.x - x_translation_in_world * radius / 1000,
+				position.y - y_translation_in_world * radius / 1000,
+				position.z - z_translation_in_world * radius / 1000);
+		lookPosition(target.x - x_translation_in_world * radius / 1000,
+				target.y - y_translation_in_world * radius / 1000, target.z - z_translation_in_world * radius / 1000);
+
+		updateSphericalCoordinatesFromLocations();
+	}
+
+	@Override
+	protected void resetPivot() {
+		final LayeredDisplayData data = getRenderer().data;
+		final double envWidth = data.getEnvWidth();
+		final double envHeight = data.getEnvHeight();
+		final double translate_x = target.x - envWidth / 2;
+		final double translate_y = target.y + envHeight / 2;
+		final double translate_z = target.z;
+		target.setLocation(envWidth / 2, -envHeight / 2, 0);
+		position.setLocation(position.x - translate_x, position.y - translate_y, position.z - translate_z);
+		updateSphericalCoordinatesFromLocations();
+	}
+
+	@Override
+	protected void quickLeftTurn() {
+		theta -= 30;
+		updateCartesianCoordinatesFromAngles();
+	}
+
+	@Override
+	protected void quickRightTurn() {
+		theta += 30;
+		updateCartesianCoordinatesFromAngles();
+	}
+
+	@Override
+	protected void quickUpTurn() {
+		if (flipped) {
+			if (phi + 30 < 180)
+				phi += 30;
+			else {
+				phi = 360 - phi - 30;
+				flipped = false;
+				theta += 180;
+			}
+		} else {
+			if (phi - 30 > 0)
+				phi -= 30;
+			else {
+				phi = -phi + 30;
+				flipped = true;
+				theta += 180;
+			}
 		}
+		updateCartesianCoordinatesFromAngles();
+	}
+
+	@Override
+	protected void quickDownTurn() {
+		if (flipped) {
+			if (phi - 30 > 0)
+				phi -= 30;
+			else {
+				phi = -phi + 30;
+				flipped = false;
+				theta += 180;
+			}
+		} else {
+			if (phi + 30 < 180)
+				phi += 30;
+			else {
+				phi = 360 - phi - 30;
+				flipped = true;
+				theta += 180;
+			}
+		}
+		updateCartesianCoordinatesFromAngles();
 	}
 
 	// public void followAgent(IAgent a) {
@@ -93,88 +200,128 @@ public class CameraArcBall extends AbstractCamera {
 	// }
 
 	@Override
-	public void resetCamera(final double envWidth, final double envHeight, final boolean threeD) {
+	public void reset() {
+		final LayeredDisplayData data = getRenderer().data;
+		final double envWidth = data.getEnvWidth();
+		final double envHeight = data.getEnvHeight();
+		final boolean threeD = data.isOutput3D();
 		radius = getRenderer().getMaxEnvDim() * INIT_Z_FACTOR;
 		target.setLocation(envWidth / 2, -envHeight / 2, 0);
-		phi = threeD ? 135.0 : 90.0;
-		theta = 360.00;
+		phi = threeD ? 135.0 : 0.0;
+		theta = -90.00;
+		upVectorAngle = 0.0;
+		flipped = false;
 		updateCartesianCoordinatesFromAngles();
-	}
-
-	// Move in the XY plan by changing camera pos and look pos.
-	private void moveXYPlan2(final double diffx, final double diffy, final double z, final double w, final double h) {
-
-		double translationValue = 0;
-
-		translationValue = Math.abs(diffx) * ((z + 1) / w);
-
-		if ( diffx > 0 ) {// move right
-			updatePosition(position.x - translationValue, position.y, position.z);
-			lookPosition(target.x - translationValue, target.y, target.z);
-		} else {// move left
-			updatePosition(position.x + translationValue, position.y, position.z);
-			lookPosition(target.x + translationValue, target.y, target.z);
-		}
-
-		translationValue = Math.abs(diffy) * Math.abs((z + 1) / h);
-
-		if ( diffy > 0 ) {// move down
-			updatePosition(position.x, position.y + translationValue, position.z);
-			lookPosition(target.x, target.y + translationValue, target.z);
-		} else {// move up
-			updatePosition(position.x, position.y - translationValue, position.z);
-			lookPosition(target.x, target.y - translationValue, target.z);
-		}
-
 	}
 
 	@Override
 	public void animate() {
-
-		double translation = 2 * (Math.abs(position.z) + 1) / getRenderer().getHeight();
-		if ( isForward() ) {
-			if ( isShiftKeyDown() ) {
-				phi = phi - -get_keyboardSensivity() * get_sensivity();
-				updateCartesianCoordinatesFromAngles();
-			} else {
-				updatePosition(position.x, position.y - translation, position.z);
-				lookPosition(target.x, target.y - translation, target.z);
-
-			}
-		}
-		if ( isBackward() ) {
-			if ( isShiftKeyDown() ) {
-				phi = phi - get_keyboardSensivity() * get_sensivity();
-				updateCartesianCoordinatesFromAngles();
-			} else {
-				updatePosition(position.x, position.y + translation, position.z);
-				lookPosition(target.x, target.y + translation, target.z);
-			}
-		}
-		if ( isStrafeLeft() ) {
-			if ( isShiftKeyDown() ) {
-				theta = theta - -get_keyboardSensivity() * get_sensivity();
-				updateCartesianCoordinatesFromAngles();
-			} else {
-				if ( isAltKeyDown() && isViewIn2DPlan() ) {
-					rotateCameraUpVectorOnZ(true);
-
+		// First we position the camera ???
+		super.animate();
+		if (cameraInteraction) {
+			// And we animate it if the keyboard is invoked
+			final double translation = 2 * (FastMath.abs(position.z) + 1) / getRenderer().getHeight();
+			if (isForward()) {
+				if (ctrlPressed) {
+					if (flipped) {
+						if (phi - getKeyboardSensivity() * getSensivity() > 0)
+							phi -= getKeyboardSensivity() * getSensivity();
+						else {
+							phi = -phi + getKeyboardSensivity() * getSensivity();
+							flipped = false;
+							theta += 180;
+						}
+					} else {
+						if (phi + getKeyboardSensivity() * getSensivity() < 180)
+							phi += getKeyboardSensivity() * getSensivity();
+						else {
+							phi = 360 - phi - getKeyboardSensivity() * getSensivity();
+							flipped = true;
+							theta += 180;
+						}
+					}
+					updateCartesianCoordinatesFromAngles();
 				} else {
-					updatePosition(position.x + translation, position.y, position.z);
-					lookPosition(target.x + translation, target.y, target.z);
+					if (flipped)
+						translateCameraFromScreenPlan(0.0, getKeyboardSensivity()
+								* getSensivity() /** radius/1000.0 */
+						);
+					else
+						translateCameraFromScreenPlan(0.0, -getKeyboardSensivity()
+								* getSensivity() /** radius/1000.0 */
+						);
+
 				}
 			}
-		}
-		if ( isStrafeRight() ) {
-			if ( isShiftKeyDown() ) {
-				theta = theta - get_keyboardSensivity() * get_sensivity();
-				updateCartesianCoordinatesFromAngles();
-			} else {
-				if ( isAltKeyDown() && isViewIn2DPlan() ) {
-					rotateCameraUpVectorOnZ(false);
+			if (isBackward()) {
+				if (ctrlPressed) {
+					if (flipped) {
+						if (phi + getKeyboardSensivity() * getSensivity() < 180)
+							phi += getKeyboardSensivity() * getSensivity();
+						else {
+							phi = 360 - phi - getKeyboardSensivity() * getSensivity();
+							flipped = false;
+							theta += 180;
+						}
+					} else {
+						if (phi - getKeyboardSensivity() * getSensivity() > 0)
+							phi -= getKeyboardSensivity() * getSensivity();
+						else {
+							phi = -phi + getKeyboardSensivity() * getSensivity();
+							flipped = true;
+							theta += 180;
+						}
+					}
+					updateCartesianCoordinatesFromAngles();
 				} else {
-					updatePosition(position.x - translation, position.y, position.z);
-					lookPosition(target.x - translation, target.y, target.z);
+					if (flipped)
+						translateCameraFromScreenPlan(0.0, -getKeyboardSensivity()
+								* getSensivity() /** radius/1000.0 */
+						);
+					else
+						translateCameraFromScreenPlan(0.0, getKeyboardSensivity()
+								* getSensivity() /** radius/1000.0 */
+						);
+				}
+			}
+			if (isStrafeLeft()) {
+				if (ctrlPressed) {
+					if (flipped)
+						theta = theta + -getKeyboardSensivity() * getSensivity();
+					else
+						theta = theta - -getKeyboardSensivity() * getSensivity();
+					updateCartesianCoordinatesFromAngles();
+				} else {
+					if (flipped)
+						translateCameraFromScreenPlan(
+								getKeyboardSensivity()
+										* getSensivity() /** radius/1000.0 */
+								, 0.0);
+					else
+						translateCameraFromScreenPlan(
+								-getKeyboardSensivity()
+										* getSensivity() /** radius/1000.0 */
+								, 0.0);
+				}
+			}
+			if (isStrafeRight()) {
+				if (ctrlPressed) {
+					if (flipped)
+						theta = theta + getKeyboardSensivity() * getSensivity();
+					else
+						theta = theta - getKeyboardSensivity() * getSensivity();
+					updateCartesianCoordinatesFromAngles();
+				} else {
+					if (flipped)
+						translateCameraFromScreenPlan(
+								-getKeyboardSensivity()
+										* getSensivity() /** radius/1000.0 */
+								, 0.0);
+					else
+						translateCameraFromScreenPlan(
+								getKeyboardSensivity()
+										* getSensivity() /** radius/1000.0 */
+								, 0.0);
 				}
 			}
 		}
@@ -187,126 +334,134 @@ public class CameraArcBall extends AbstractCamera {
 
 	@Override
 	public void zoom(final boolean in) {
-		double step = radius != 0d ? radius / 10d : 0.1d;
+		final double step = radius != 0d ? radius / 10d * GamaPreferences.OPENGL_ZOOM.getValue() : 0.1d;
 		radius = radius + (in ? -step : step);
-		getRenderer().displaySurface.newZoomLevel(zoomLevel());
-		// dump();
+		getRenderer().data.setZoomLevel(zoomLevel());
 		updateCartesianCoordinatesFromAngles();
 	}
 
 	@Override
-	protected void zoomRoi(final Envelope3D env) {
-		int width = (int) env.getWidth();
-		int height = (int) env.getHeight();
+	public void zoomRoi(final Envelope3D env) {
+		final int width = (int) env.getWidth();
+		final int height = (int) env.getHeight();
 		radius = 1.5 * (width > height ? width : height);
+		// y is already negated
 		target.setLocation(env.centre());
 		updateCartesianCoordinatesFromAngles();
+		// getRenderer().cancelROI();
 	}
 
 	@Override
-	public void zoomFocus(final double centerX, final double centerY, final double centerZ, final double extent) {
-		velocityHoriz = 0;
-		velocityVert = 0;
-		final double zPos;
-
-		if ( extent == 0 ) {
-			zPos = centerZ + getRenderer().getMaxEnvDim() / 10;
+	public void zoomFocus(final IShape shape) {
+		final ILocation p = shape.getLocation();
+		final double extent = shape.getEnvelope().maxExtent();
+		if (extent == 0) {
+			radius = p.getZ() + getRenderer().getMaxEnvDim() / 10;
+		} else {
+			radius = extent * 1.5;
 		}
-
-		else {
-			zPos = extent * 1.5;
-		}
-		radius = zPos;
+		// y is NOT negated in IShapes
+		target.setLocation(p.getCentroid().yNegated());
 		updateCartesianCoordinatesFromAngles();
-		updatePosition(centerX, -centerY, zPos);
-		lookPosition(centerX, -centerY, 0);
 	}
 
 	@Override
-	public void mouseMove(final org.eclipse.swt.events.MouseEvent e) {
-		super.mouseMove(e);
-		if ( (e.stateMask & SWT.BUTTON_MASK) == 0 ) { return; }
+	public void internalMouseMove(final org.eclipse.swt.events.MouseEvent e) {
 
-		Point newPoint = new Point(e.x, e.y);
-		enableInertia = false;
-		if ( isArcBallOn(e) ) {
-			arcBallInertia = true;
-		} else {
-			if ( lastMousePressedPosition == null ) {
-				horizInertia = 0;
-				vertInertia = 0;
-			} else {
-				horizInertia = newPoint.x - lastMousePressedPosition.x;
-				vertInertia = newPoint.y - lastMousePressedPosition.y;
-			}
-			velocityHoriz = horizInertia;
-			velocityVert = vertInertia;
-			moveInertia = true;
+		super.internalMouseMove(e);
+		if ((e.stateMask & SWT.BUTTON_MASK) == 0) {
+			return;
 		}
-
-		if ( isArcBallOn(e) ) {
-
-			// check the difference between the current x and the last x position
-			int horizMovement = e.x - lastMousePressedPosition.x;
-			// check the difference between the current y and the last y position
-			int vertMovement = e.y - lastMousePressedPosition.y;
-
-			horizInertia = newPoint.x - lastMousePressedPosition.x;
-			vertInertia = newPoint.y - lastMousePressedPosition.y;
-			velocityHoriz = horizInertia;
-			velocityVert = vertInertia;
-			lastMousePressedPosition = newPoint;
-			theta = theta - horizMovement * get_sensivity();
-			phi = phi - vertMovement * get_sensivity();
-			updateCartesianCoordinatesFromAngles();
-
-		}
-		// ROI Is enabled only if the view is in a 2D plan.
-		// else if ( myRenderer.displaySurface.selectRectangle && IsViewIn2DPlan() ) {
-
-		else if ( (shift(e) || alt(e)) && isViewIn2DPlan() ) {
-			getMousePosition().x = e.x;
-			getMousePosition().y = e.y;
-			getRenderer().defineROI(getMousePosition());
-		} else {
-			// check the difference between the current x and the last x position
-			int diffx = newPoint.x - lastMousePressedPosition.x;
-			// check the difference between the current y and the last y position
-			int diffy = newPoint.y - lastMousePressedPosition.y;
-			lastMousePressedPosition = newPoint;
-
-			// double speed = 0.035;
-
-			// Decrease the speed of the translation if z is negative.
-			// if ( position.z < 0 ) {
-			// speed = speed / Math.abs(position.z) * 2;
-			// } else {
-			// speed = speed * position.z / 4;
+		final Point newPoint = new Point(e.x, e.y);
+		if (GamaKeyBindings.ctrl(e)) {
+			final int horizMovement = e.x - lastMousePressedPosition.x;
+			final int vertMovement = e.y - lastMousePressedPosition.y;
+			// if (flipped) {
+			// horizMovement = -horizMovement;
+			// vertMovement = -vertMovement;
 			// }
 
-			moveXYPlan2(diffx, diffy, position.z, getRenderer().getWidth(), getRenderer().getHeight());
+			final double horizMovement_real = horizMovement * FastMath.cos(upVectorAngle * Maths.toRad)
+					- vertMovement * FastMath.sin(upVectorAngle * Maths.toRad);
+			final double vertMovement_real = vertMovement * FastMath.cos(upVectorAngle * Maths.toRad)
+					+ horizMovement * FastMath.sin(upVectorAngle * Maths.toRad);
+
+			lastMousePressedPosition = newPoint;
+			theta = theta - horizMovement_real * getSensivity();
+
+			if (flipped) {
+				if (vertMovement_real > 0) {
+					// down drag : phi increase
+					if (phi + vertMovement_real * getSensivity() < 180)
+						phi += vertMovement_real * getSensivity();
+					else {
+						phi = +360 + phi - vertMovement_real * getSensivity();
+						flipped = !flipped;
+						theta += 180;
+					}
+				} else {
+					// up drag : phi decrease
+					if (phi - -vertMovement_real * getSensivity() > 0)
+						phi -= -vertMovement_real * getSensivity();
+					else {
+						phi = -phi + -vertMovement_real * getSensivity();
+						flipped = !flipped;
+						theta += 180;
+					}
+				}
+			} else {
+				if (vertMovement_real > 0) {
+					// down drag : phi decrease
+					if (phi - vertMovement_real * getSensivity() > 0)
+						phi -= vertMovement_real * getSensivity();
+					else {
+						phi = -phi + vertMovement_real * getSensivity();
+						flipped = !flipped;
+						theta += 180;
+					}
+				} else {
+					// up drag : phi increase
+					if (phi + -vertMovement_real * getSensivity() < 180)
+						phi += -vertMovement_real * getSensivity();
+					else {
+						phi = +360 + phi - vertMovement_real * getSensivity();
+						flipped = !flipped;
+						theta += 180;
+					}
+				}
+			}
+
+			// phi = phi - vertMovement_real * get_sensivity();
+			updateCartesianCoordinatesFromAngles();
+		} else if (shiftPressed && isViewInXYPlan()) {
+			getMousePosition().x = e.x;
+			getMousePosition().y = e.y;
+			getRenderer().defineROI(firstMousePressedPosition, getMousePosition());
+		} else if (getRenderer().mouseInROI(getMousePosition())) {
+			GamaPoint p = getRenderer().getRealWorldPointFromWindowPoint(getMousePosition());
+			p = p.minus(getRenderer().getROIEnvelope().centre());
+			getRenderer().getROIEnvelope().translate(p.x, p.y);
+
+		} else {
+
+			int horizMovement = e.x - lastMousePressedPosition.x;
+			int vertMovement = e.y - lastMousePressedPosition.y;
+			if (flipped) {
+				horizMovement = -horizMovement;
+				vertMovement = -vertMovement;
+			}
+
+			final double horizMovement_real = horizMovement * FastMath.cos(upVectorAngle * Maths.toRad)
+					- vertMovement * FastMath.sin(upVectorAngle * Maths.toRad);
+			final double vertMovement_real = vertMovement * FastMath.cos(upVectorAngle * Maths.toRad)
+					+ horizMovement * FastMath.sin(upVectorAngle * Maths.toRad);
+
+			translateCameraFromScreenPlan(horizMovement_real, vertMovement_real);
+
+			lastMousePressedPosition = newPoint;
 		}
 
-		// PrintParam();
 	}
-
-	@Override
-	public void mouseDown(final org.eclipse.swt.events.MouseEvent arg0) {
-		zeroVelocity();
-		super.mouseDown(arg0);
-	}
-
-	//
-	// @Override
-	// public void mousePressed(final MouseEvent arg0) {
-	// zeroVelocity();
-	// super.mousePressed(arg0);
-	// }
-
-	// @Override
-	// protected boolean canSelectOnRelease(final MouseEvent arg0) {
-	// return true;
-	// }
 
 	@Override
 	protected boolean canSelectOnRelease(final org.eclipse.swt.events.MouseEvent arg0) {
@@ -314,56 +469,63 @@ public class CameraArcBall extends AbstractCamera {
 	}
 
 	@Override
-	public void mouseUp(final org.eclipse.swt.events.MouseEvent arg0) {
-		enableInertia = true;
-		super.mouseUp(arg0);
-	}
-
-	@Override
-	public boolean isViewIn2DPlan() {
-		return phi > 85 && phi < 95 && theta > 355 && theta < 365;
-	}
-
-	@Override
-	public void doInertia() {
-		if ( enableInertia ) {
-			if ( arcBallInertia ) {
-				velocityHoriz = velocityHoriz * damping;
-				velocityVert = velocityVert * damping;
-				theta = theta - velocityHoriz * amplitude;
-				phi = phi - velocityVert * amplitude;
-				updateCartesianCoordinatesFromAngles();
-				if ( Math.abs(velocityHoriz) < 0.01 || Math.abs(velocityVert) < 0.01 ) {
-					velocityHoriz = 0;
-					velocityVert = 0;
-					enableInertia = false;
-					arcBallInertia = false;
-				}
+	protected void drawRotationHelper() {
+		if (isDrawingRotateHelper) {
+			if (ctrlPressed) {
+				getRenderer().startDrawRotationHelper(target);
+			} else {
+				getRenderer().stopDrawRotationHelper();
 			}
-			if ( moveInertia ) {
-				velocityHoriz = velocityHoriz * damping;
-				velocityVert = velocityVert * damping;
-
-				moveXYPlan2(velocityHoriz, velocityVert, position.z, getRenderer().getWidth(), getRenderer()
-					.getHeight());
-
-				if ( Math.abs(velocityHoriz) < 0.01 || Math.abs(velocityVert) < 0.01 ) {
-					velocityHoriz = 0;
-					velocityVert = 0;
-					enableInertia = false;
-					moveInertia = false;
-				}
-			}
-
 		}
 	}
 
 	@Override
-	public void zeroVelocity() {
-		velocityHoriz = 0;
-		velocityVert = 0;
+	public double getPitch() {
+		// compute the angle between the vector (0,0,1) and the vector (x,y,z),
+		// where (x,y,z) is the orthogonal projection of the vector from the on
+		// the plan (y=0).y and z are the normalized components of the vector
+		// from the camera
+		// position to the target position.
+		final double x = target.x - position.x;
+		double y = target.y - position.y;
+		double z = target.z - position.z;
+		final double sum = Math.abs(x) + 0 + Math.abs(z);
+		y = Math.abs(y / sum); // normalize
+		z = Math.abs(z / sum); // normalize
+		// the angle between the two vectors is computed like this : cos(angle)
+		// = u dot v.
+		final double cosAngle = z;
+		final double angle = Math.acos(cosAngle);
+		// final double angleInDeg = Math.toDegrees(angle);
+		return angle;
+		// return Math.toRadians(-phi);
 	}
 
-	
+	@Override
+	public double getYaw() {
+		// compute the angle between the vector (0,0,1) and the vector (0,y,z),
+		// where y and z are the normalized components of the vector from the
+		// camera
+		// position to the target position.
+		final double x = target.x - position.x;
+		double y = target.y - position.y;
+		double z = target.z - position.z;
+		final double sum = 0 + Math.abs(y) + Math.abs(z);
+		y = Math.abs(y / sum); // normalize
+		z = Math.abs(z / sum); // normalize
+		// the angle between the two vectors is computed like this : cos(angle)
+		// = u dot v.
+		final double cosAngle = z;
+		final double angle = Math.acos(cosAngle);
+		// double angleInDeg = Math.toDegrees(angle);
+		return angle;
+		// return Math.toRadians(-theta-90);
+	}
+
+	@Override
+	public double getRoll() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
 }// End of Class CameraArcBall

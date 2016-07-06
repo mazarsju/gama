@@ -1,21 +1,21 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'GamaPathType.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.types;
 
 import java.util.List;
 import msi.gama.common.interfaces.IKeyword;
 import msi.gama.metamodel.shape.IShape;
-import msi.gama.precompiler.GamlAnnotations.type;
 import msi.gama.precompiler.*;
+import msi.gama.precompiler.GamlAnnotations.type;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gama.util.*;
@@ -23,9 +23,10 @@ import msi.gama.util.path.*;
 import msi.gaml.operators.Cast;
 
 @type(name = IKeyword.PATH,
-	id = IType.PATH,
-	wraps = { IPath.class, GamaPath.class },
-	kind = ISymbolKind.Variable.REGULAR)
+id = IType.PATH,
+wraps = { IPath.class, GamaPath.class },
+kind = ISymbolKind.Variable.REGULAR,
+concept = { IConcept.TYPE })
 public class GamaPathType extends GamaType<IPath> {
 
 	@Override
@@ -141,9 +142,14 @@ public class GamaPathType extends GamaType<IPath> {
 				}
 			}
 			// return new GamaPath(scope.getTopology(), list);
-			return PathFactory.newInstance(isEdges ? (IList<IShape>) obj : (IList<IShape>) list, isEdges);
+			return PathFactory.newInstance(scope, isEdges ? (IList<IShape>) obj : (IList<IShape>) list, isEdges);
 		}
 		return null;
+	}
+
+	@Override
+	public boolean isDrawable() {
+		return true;
 	}
 
 	@Override

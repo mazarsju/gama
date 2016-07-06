@@ -41,15 +41,6 @@ public interface GamlFactory extends EFactory
   StringEvaluator createStringEvaluator();
 
   /**
-   * Returns a new object of class '<em>Action Editor</em>'.
-   * <!-- begin-user-doc -->
-   * <!-- end-user-doc -->
-   * @return a new object of class '<em>Action Editor</em>'.
-   * @generated
-   */
-  ActionEditor createActionEditor();
-
-  /**
    * Returns a new object of class '<em>Model</em>'.
    * <!-- begin-user-doc -->
    * <!-- end-user-doc -->
@@ -75,6 +66,15 @@ public interface GamlFactory extends EFactory
    * @generated
    */
   Import createImport();
+
+  /**
+   * Returns a new object of class '<em>Pragma</em>'.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @return a new object of class '<em>Pragma</em>'.
+   * @generated
+   */
+  Pragma createPragma();
 
   /**
    * Returns a new object of class '<em>Statement</em>'.
@@ -246,15 +246,6 @@ public interface GamlFactory extends EFactory
    * @generated
    */
   S_Solve createS_Solve();
-
-  /**
-   * Returns a new object of class '<em>SMonitor</em>'.
-   * <!-- begin-user-doc -->
-   * <!-- end-user-doc -->
-   * @return a new object of class '<em>SMonitor</em>'.
-   * @generated
-   */
-  S_Monitor createS_Monitor();
 
   /**
    * Returns a new object of class '<em>SDisplay</em>'.

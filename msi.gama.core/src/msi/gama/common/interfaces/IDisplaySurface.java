@@ -1,73 +1,81 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'IDisplaySurface.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.common.interfaces;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.Collection;
+
+import com.vividsolutions.jts.geom.Envelope;
+
+// import msi.gama.common.interfaces.IDisplaySurface.IZoomListener;
 import msi.gama.metamodel.agent.IAgent;
-import msi.gama.metamodel.shape.*;
-import msi.gama.outputs.*;
+import msi.gama.metamodel.shape.Envelope3D;
+import msi.gama.metamodel.shape.ILocation;
+import msi.gama.metamodel.shape.IShape;
+import msi.gama.outputs.LayeredDisplayData;
 import msi.gama.outputs.LayeredDisplayData.DisplayDataListener;
-import msi.gama.outputs.layers.ILayerMouseListener;
+import msi.gama.outputs.LayeredDisplayOutput;
+import msi.gama.outputs.layers.IEventLayerListener;
 import msi.gama.runtime.IScope;
+import msi.gaml.statements.draw.DrawingAttributes;
 
 /**
  * Written by drogoul Modified on 26 nov. 2009
- * 
+ *
  * @todo Description
- * 
+ *
  */
-public interface IDisplaySurface extends DisplayDataListener /* extends IPerspectiveListener, IPartListener */{
+public interface IDisplaySurface extends
+		DisplayDataListener /* extends IPerspectiveListener, IPartListener */ {
 
 	static final String SNAPSHOT_FOLDER_NAME = "snapshots";
-	static final int MAX_ZOOM_FACTOR = 2;
+	static final double MIN_ZOOM_FACTOR = 0.1;
+	static final int MAX_ZOOM_FACTOR = 10;
 
-	public interface OpenGL extends IDisplaySurface, IZoomListener {
+	public interface OpenGL extends IDisplaySurface {
 
 		/**
 		 * @return the position of the camera
 		 */
 		ILocation getCameraPosition();
 
+		Envelope3D getROIDimensions();
+
 		void setPaused(boolean flag);
 
-		void selectAgent(IAgent agent);
+		void selectAgent(DrawingAttributes attributes);
 
-		void selectSeveralAgents(Collection<IAgent> shapes);
+		void selectionIn(Envelope3D env);
 
-	}
-
-	public interface IZoomListener {
-
-		public void newZoomLevel(double zoomLevel);
 	}
 
 	public static final double SELECTION_SIZE = 5; // pixels
 	public static final int MAX_SIZE = Integer.MAX_VALUE; // pixels
 
-	BufferedImage getImage();
+	BufferedImage getImage(int width, int height);
 
 	void dispose();
 
-	/** Asks the surface to update its display, optionnaly forcing it to do so (if it is paused, for instance) **/
+	/**
+	 * Asks the surface to update its display, optionnaly forcing it to do so
+	 * (if it is paused, for instance)
+	 **/
 	void updateDisplay(boolean force);
 
 	/**
 	 * @param displaySurfaceMenu
 	 */
-	void setSWTMenuManager(Object displaySurfaceMenu);
-
-	// int[] computeBoundsFrom(int width, int height);
+	void setMenuManager(Object displaySurfaceMenu);
 
 	boolean resizeImage(int width, int height, boolean force);
 
@@ -81,11 +89,12 @@ public interface IDisplaySurface extends DisplayDataListener /* extends IPerspec
 
 	void focusOn(IShape geometry);
 
-	// void canBeUpdated(boolean ok);
-
+	/**
+	 * Run the runnable in argument and refresh the output
+	 * 
+	 * @param r
+	 */
 	void runAndUpdate(Runnable r);
-
-	void snapshot();
 
 	/**
 	 * @return the width of the panel
@@ -99,29 +108,23 @@ public interface IDisplaySurface extends DisplayDataListener /* extends IPerspec
 
 	/**
 	 * Whatever is needed to do when the simulation has been reloaded.
-	 * 
+	 *
 	 * @param layerDisplayOutput
 	 */
 	void outputReloaded();
-
-	public void addMouseListener(ILayerMouseListener e);
-
-	public void removeMouseListener(ILayerMouseListener e);
 
 	double getEnvWidth();
 
 	double getEnvHeight();
 
-	public abstract int getDisplayWidth();
+	public abstract double getDisplayWidth();
 
-	public abstract int getDisplayHeight();
-
-	public abstract void setZoomListener(IZoomListener listener);
+	public abstract double getDisplayHeight();
 
 	public ILocation getModelCoordinates();
 
 	public ILocation getModelCoordinatesFrom(final int xOnScreen, final int yOnScreen, final Point sizeInPixels,
-		final Point positionInPixels);
+			final Point positionInPixels);
 
 	public Collection<IAgent> selectAgent(final int x, final int y);
 
@@ -134,26 +137,54 @@ public interface IDisplaySurface extends DisplayDataListener /* extends IPerspec
 
 	void setSize(int x, int y);
 
-	// boolean getQualityRendering();
-
 	IScope getDisplayScope();
 
-	IDisplayOutput getOutput();
+	LayeredDisplayOutput getOutput();
 
 	LayeredDisplayData getData();
 
+	void layersChanged();
+
+	public void addListener(IEventLayerListener e);
+
+	public void removeListener(IEventLayerListener e);
+
+	Collection<IEventLayerListener> getLayerListeners();
+
+	Envelope getVisibleRegionForLayer(ILayer currentLayer);
+
+	int getFPS();
+
 	/**
-	 * @return
+	 * @return true if the surface is considered as "realized" (i.e. displayed
+	 *         on the UI)
+	 */
+	boolean isRealized();
+
+	/**
+	 * @return true if the surface has been "rendered" (i.e. all the layers have
+	 *         been displayed)
+	 */
+	boolean isRendered();
+
+	/**
+	 * @return true if the surface has been 'disposed' by SWT
 	 */
 	boolean isDisposed();
 
 	/**
-	 * 
+	 * @return
 	 */
-	void layersChanged();
+	String getModelCoordinatesInfo();
 
-	void acquireLock();
+	void dispatchKeyEvent(char character);
 
-	void releaseLock();
+	void dispatchMouseEvent(int swtEventType);
+
+	void setMousePosition(int x, int y);
+
+	void draggedTo(int x, int y);
+
+	void selectAgentsAroundMouse();
 
 }

@@ -1,8 +1,9 @@
 /**
- *  DB2agentSQLite
- *  Author: bgaudou
- *  Description: 
- */
+* Name:  Agents from Database in MySQL
+* Author: Benoit Gaudou
+* Description:  This model does SQl query commands and create agents using the results
+* Tags: database
+  */
 
 model DB2agentMySQL
 
@@ -27,6 +28,7 @@ global {
 	geometry shape <- envelope(BOUNDS);		  	
 	 	
 	init {
+		write "This model will work only if the corresponding database is installed";
 		create DB_accessor {
 			create buildings from: list(self select [params:: PARAMS, select:: QUERY]) 
 							 with:[ 'name'::"name",'type'::"type", 'shape':: geometry("geom")];
@@ -35,16 +37,14 @@ global {
 }
 
 
-entities {
-	species DB_accessor skills: [SQLSKILL];
-	
-	species buildings {
-		string type;
-		aspect default {
-			draw shape color: #gray ;
-		}	
+species DB_accessor skills: [SQLSKILL];
+
+species buildings {
+	string type;
+	aspect default {
+		draw shape color: #gray ;
 	}	
-}
+}	
 
 experiment DB2agentSQLite type: gui {
 	output {

@@ -1,8 +1,11 @@
 /**
- *  OSMdata_to_shapefile
- *  Author: patricktaillandier
- *  Description: load OSM data and format them in order to be used easily by the advance driving skill
- */
+* Name: OSM Loading Driving
+* Author: Patrick Taillandier
+* Description: Model to show how to import OSM Files, using them to create agents for a road network, and saving the different agents in shapefiles. 
+* The first goal of this model is to prepare data for the driving skill models.
+* Tags:  load_file, gis, shapefile, save_file, osm
+*/
+
 
 model OSMdata_to_shapefile 
  
@@ -71,6 +74,7 @@ global{
 		
 		write "node agents filtered";
 		
+		//Save all the road agents inside the file with the path written, using the with: facet to make a link between attributes and columns of the resulting shapefiles. 
 		save road type:"shp" to:"../includes/roads.shp" with:[lanes::"lanes",maxspeed::"maxspeed", oneway::"oneway"] ;
 		save intersection type:"shp" to:"../includes/nodes.shp" with:[type::"type", crossing::"crossing"] ;
 		write "road and node shapefile saved";
@@ -101,7 +105,7 @@ species intersection {
 
 experiment fromOSMtoShapefiles type: gui {
 	output {
-		display map type: opengl ambient_light: 100{
+		display map type: opengl {
 			graphics "world" {
 				draw world.shape.contour;
 			}

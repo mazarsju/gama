@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="simtools.graphlayout.feature"
-      label="GraphLayouts"
-      version="1.0.0.qualifier">
+      label="Graph Layouts"
+      version="1.7.0.qualifier">
 
    <description url="http://www.example.com/description">
       Graph Layout Operators
@@ -16,14 +16,18 @@
       [Enter License Description here.]
    </license>
 
+   <url>
+      <update label="GAMA 1.7.x Update Site" url="http://updates.gama-platform.org"/>
+   </url>
+
    <requires>
-      <import plugin="msi.gama.core" version="1.6.1" match="greaterOrEqual"/>
+      <import plugin="msi.gama.core" version="1.7.0" match="greaterOrEqual"/>
       <import plugin="msi.gama.ext" version="1.0.0" match="greaterOrEqual"/>
       <import plugin="msi.gama.processor" version="1.4.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.emf.ecore"/>
       <import plugin="org.junit" version="4.8.2" match="greaterOrEqual"/>
       <import plugin="org.eclipse.core.runtime"/>
-      <import plugin="com.google.guava" version="10.0.1" match="compatible"/>
+      <import plugin="com.google.guava" version="15.0" match="compatible"/>
       <import plugin="org.apache.commons.lang"/>
    </requires>
 

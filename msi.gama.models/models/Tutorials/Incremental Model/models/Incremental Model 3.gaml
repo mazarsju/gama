@@ -1,7 +1,10 @@
 /**
- *  model3
- *  This model illustrates how to load GIS data (shapefiles) and to read attributes from GIS data
- */ 
+* Name: Integration of GIS Data
+* Author:
+* Description: third part of the tutorial : Incremental Model
+* Tags: gis
+*/
+
 model model3 
  
 global {
@@ -31,7 +34,7 @@ global {
 		}
 	}
 	reflex end_simulation when: infected_rate = 1.0 {
-		do halt;
+		do pause;
 	}
 }
 

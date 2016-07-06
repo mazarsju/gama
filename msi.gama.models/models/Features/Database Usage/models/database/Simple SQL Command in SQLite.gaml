@@ -1,26 +1,35 @@
 /**
- *  Author: Truong Minh Thai (thai.truongminh@gmail.com)
- *  Description:
- *   This model does SQl query commands:
- * 		- Create table 
- * 		- Insert data
- *      - Select data
- * 	    - Delete data
- *      - Drop table 
+* Name:  Simple SQL Command in SQLIte
+* Author: Truong Minh Thai
+* Description:  This model does SQl query commands:
+* 
+ * - Create table 
+ * 
+ * - Insert data
+ * 
+ * - Select data
+ * 
+ * - Delete data
+ * 
+ * - Drop table 
+ * 
  * 
  *  Note: the file emptyFile.db is only ... an empty file.
- */
+* Tags: database
+  */
 model SQLite_selectNUpdate
 
 global {
 	map<string, string> PARAMS <- ['dbtype'::'sqlite', 'database'::'../../includes/emptyFile.db'];
 	init {
+		write "This model will work only if the corresponding database is installed" color: #red;
+
 		create DB_Accessor;
 
 		// Test of the connection to the database
 		if (first(DB_Accessor) testConnection [params::PARAMS] = false) {
 			write "Connection impossible";
-			do halt;
+			do pause;
 		}
 
 		ask (DB_Accessor) {

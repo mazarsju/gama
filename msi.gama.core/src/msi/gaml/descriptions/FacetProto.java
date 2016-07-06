@@ -1,20 +1,20 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'FacetProto.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.descriptions;
 
-import gnu.trove.set.hash.THashSet;
 import java.util.*;
+import gnu.trove.set.hash.THashSet;
 import msi.gama.common.interfaces.*;
-import msi.gama.precompiler.JavaWriter;
+import msi.gama.precompiler.*;
 import msi.gaml.types.*;
 
 public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGamlable {
@@ -22,6 +22,8 @@ public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGa
 	public final String name;
 	public String deprecated = null;
 	public final int[] types;
+	public final int contentType;
+	public final int keyType;
 	public final boolean optional;
 	public final boolean internal;
 	private final boolean isLabel;
@@ -34,10 +36,12 @@ public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGa
 	static FacetProto DEPENDS_ON = DEPENDS_ON();
 	static FacetProto NAME = NAME();
 
-	public FacetProto(final String name, final int[] types, final String[] values, final boolean optional,
-		final boolean internal, final String doc) {
+	public FacetProto(final String name, final int[] types, final int ct, final int kt, final String[] values,
+		final boolean optional, final boolean internal, final String doc) {
 		this.name = name;
 		this.types = types;
+		this.contentType = ct;
+		this.keyType = kt;
 		this.optional = optional;
 		this.internal = internal;
 		isLabel = SymbolProto.ids.contains(types[0]);
@@ -60,6 +64,12 @@ public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGa
 		return isLabel;
 	}
 
+	@Override
+	public String getDefiningPlugin() {
+		// returns null as facets cannot be defined alone (the symbol already carries this information)
+		return null;
+	}
+
 	public boolean isId() {
 		return isId;
 	}
@@ -69,18 +79,18 @@ public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGa
 	// }
 
 	static FacetProto DEPENDS_ON() {
-		return new FacetProto(IKeyword.DEPENDS_ON, new int[] { IType.LIST }, new String[0], true, true,
-			"the dependencies of expressions (internal)");
+		return new FacetProto(IKeyword.DEPENDS_ON, new int[] { IType.LIST }, IType.STRING, IType.INT, new String[0],
+			true, true, "the dependencies of expressions (internal)");
 	}
 
 	static FacetProto KEYWORD() {
-		return new FacetProto(IKeyword.KEYWORD, new int[] { IType.ID }, new String[0], true, true,
-			"the declared keyword (internal)");
+		return new FacetProto(IKeyword.KEYWORD, new int[] { IType.ID }, IType.NONE, IType.NONE, new String[0], true,
+			true, "the declared keyword (internal)");
 	}
 
 	static FacetProto NAME() {
-		return new FacetProto(IKeyword.NAME, new int[] { IType.LABEL }, new String[0], true, true,
-			"the declared name (internal)");
+		return new FacetProto(IKeyword.NAME, new int[] { IType.LABEL }, IType.NONE, IType.NONE, new String[0], true,
+			true, "the declared name (internal)");
 	}
 
 	/**
@@ -117,6 +127,7 @@ public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGa
 					s.append("any type");
 					break;
 				default:
+					// TODO AD 2/16 Document the types with the new possibility to include of and index
 					s.append(Types.get(types[i]).toString());
 			}
 			if ( i != types.length - 1 ) {
@@ -187,6 +198,13 @@ public class FacetProto implements IGamlDescription, Comparable<FacetProto>, IGa
 		return name + (optional ? ": optional" : ": required") + " (" +
 			(types.length < 2 ? typesToString().substring(1) : typesToString()) + ")";
 	}
+
+	/**
+	 * Method collectPlugins()
+	 * @see msi.gaml.descriptions.IGamlDescription#collectPlugins(java.util.Set)
+	 */
+	@Override
+	public void collectMetaInformation(final GamlProperties meta) {}
 
 	/**
 	 * @return

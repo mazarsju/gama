@@ -1,106 +1,129 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'GridLayer.java', in plugin 'msi.gama.application', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.outputs.layers;
 
-import gnu.trove.set.hash.THashSet;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
-import java.util.*;
-import msi.gama.common.interfaces.*;
-import msi.gama.common.util.ImageUtils;
-import msi.gama.metamodel.agent.IAgent;
-import msi.gama.metamodel.shape.*;
-import msi.gama.metamodel.topology.grid.IGrid;
-import msi.gama.runtime.IScope;
-import msi.gama.util.file.GamaImageFile;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Set;
+
 import com.vividsolutions.jts.geom.Envelope;
 
+import gnu.trove.set.hash.THashSet;
+import msi.gama.common.interfaces.IDisplaySurface;
+import msi.gama.common.interfaces.IGraphics;
+import msi.gama.common.util.ImageUtils;
+import msi.gama.metamodel.agent.IAgent;
+import msi.gama.metamodel.shape.GamaPoint;
+import msi.gama.metamodel.shape.ILocation;
+import msi.gama.metamodel.shape.IShape;
+import msi.gama.metamodel.topology.grid.GamaSpatialMatrix;
+import msi.gama.runtime.IScope;
+import msi.gama.util.GamaColor;
+import msi.gama.util.file.GamaImageFile;
+import msi.gaml.statements.draw.FieldDrawingAttributes;
+
+// FIXME This class nees to be entirely rewritten ...
+
 public class GridLayer extends ImageLayer {
+
+	static GamaColor defaultLineColor = GamaColor.getInt(Color.black.getRGB());
+
+	public boolean turnGridOn;
+	private final GamaPoint cellSize;
+	BufferedImage image;
 
 	@Override
 	public Rectangle2D focusOn(final IShape geometry, final IDisplaySurface s) {
 		final GridLayerStatement g = (GridLayerStatement) definition;
-		IAgent a = geometry.getAgent();
-		if ( a == null ) { return null; }
-		if ( a.getSpecies() != g.getEnvironment().getCellSpecies() ) { return null; }
-		Envelope env = a.getEnvelope();
-		Point min = this.getScreenCoordinatesFrom(env.getMinX(), env.getMinY(), s);
-		Point max = this.getScreenCoordinatesFrom(env.getMaxX(), env.getMaxY(), s);
-		return new Rectangle2D.Double(min.x, min.y, max.x - min.x, max.y - min.y);
+		final IAgent a = geometry.getAgent();
+		if (a == null || a.getSpecies() != g.getEnvironment().getCellSpecies()) {
+			return null;
+		}
+		return super.focusOn(a, s);
 	}
-
-	public boolean turnGridOn;
-	private double cellSize;
 
 	public GridLayer(final IScope scope, final ILayerStatement layer) {
 		super(scope, layer);
 		turnGridOn = ((GridLayerStatement) layer).drawLines();
+		final GamaSpatialMatrix m = (GamaSpatialMatrix) ((GridLayerStatement) layer).getEnvironment();
+		final ILocation p = m.getDimensions();
+		final Envelope env = scope.getRoot().getGeometry().getEnvelope();
+		cellSize = new GamaPoint(env.getWidth() / m.numCols, env.getHeight() / m.numRows);
 	}
 
 	@Override
 	public void reloadOn(final IDisplaySurface surface) {
 		super.reloadOn(surface);
-		if ( image != null ) {
+		if (image != null)
 			image.flush();
-			image = null;
-		}
 	}
 
 	@Override
 	protected void buildImage(final IScope scope) {
-		if ( scope == null ) { return; }
-		final GridLayerStatement g = (GridLayerStatement) definition;
-		final IGrid m = g.getEnvironment();
-		final ILocation p = m.getDimensions();
-		// in case the agents have been killed
-		if ( m.getAgents().size() > 0 ) {
-			cellSize = m.getAgents().get(0).getGeometry().getEnvelope().getWidth();
+		final IGraphics g = scope.getGraphics();
+		if (g == null)
+			return;
+		if (image == null) {
+			final GamaSpatialMatrix m = (GamaSpatialMatrix) ((GridLayerStatement) definition).getEnvironment();
+			final ILocation p = m.getDimensions();
+			if (g.is2D()) {
+				image = ImageUtils.createCompatibleImage((int) p.getX(), (int) p.getY());
+			} else {
+				image = ImageUtils.createPremultipliedBlankImage((int) p.getX(), (int) p.getY());
+			}
 		}
 
-		if ( image == null ) {
-			image = ImageUtils.createCompatibleImage(p.getX(), p.getY());
-		}
-		int[] data = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
-		System.arraycopy(m.getDisplayData(), 0, data, 0, data.length);
-		image.setRGB(0, 0, (int) p.getX(), (int) p.getY(), m.getDisplayData(), 0, (int) p.getX());
 	}
 
 	@Override
 	public void privateDrawDisplay(final IScope scope, final IGraphics dg) {
+		if (dg == null || dg.cannotDraw())
+			return;
 		buildImage(scope);
 		final GridLayerStatement g = (GridLayerStatement) definition;
-		if ( image == null ) { return; }
-		Color lineColor = null;
-		if ( turnGridOn ) {
+		GamaColor lineColor = null;
+		if (turnGridOn) {
 			lineColor = g.getLineColor();
-			if ( lineColor == null ) {
-				lineColor = Color.black;
+			if (lineColor == null) {
+				lineColor = defaultLineColor;
 			}
 		}
-		double[] gridValueMatrix = g.getElevationMatrix(scope);
-		if ( gridValueMatrix != null ) {
-			GamaImageFile textureFile = g.textureFile();
-			if ( textureFile != null ) { // display grid dem:texturefile
-				BufferedImage texture = textureFile.getImage(scope);
-				dg.drawGrid(scope, texture, gridValueMatrix, true, g.isTriangulated(), g.isGrayScaled(),
-					g.isShowText(), lineColor, cellSize, this.getName());
-			} else {
-				dg.drawGrid(scope, image, gridValueMatrix, g.isTextured(), g.isTriangulated(), g.isGrayScaled(),
-					g.isShowText(), lineColor, cellSize, this.getName());
-			}
+		final double[] gridValueMatrix = g.getElevationMatrix(scope);
+		final GamaImageFile textureFile = g.textureFile();
+		final FieldDrawingAttributes attributes = new FieldDrawingAttributes(getName(), lineColor);
+		attributes.grayScaled = g.isGrayScaled;
+		attributes.fieldSize = g.getEnvironment().getDimensions();
+		attributes.depth = 1.0;
+		if (textureFile != null) {
+			attributes.textures = Arrays.asList(textureFile);
+		} else if (image != null) {
 
+			final int[] data = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+			System.arraycopy(g.getEnvironment().getDisplayData(), 0, data, 0, data.length);
+			attributes.textures = Arrays.asList(image);
+		}
+		attributes.triangulated = g.isTriangulated;
+		attributes.withText = g.showText;
+		attributes.cellSize = cellSize;
+		attributes.border = lineColor;
+
+		if (gridValueMatrix == null) {
+			dg.drawImage(image, attributes);
 		} else {
-			dg.drawImage(scope, image, null, null, lineColor, null, true, this.getName());
+			dg.drawField(gridValueMatrix, attributes);
 		}
 	}
 

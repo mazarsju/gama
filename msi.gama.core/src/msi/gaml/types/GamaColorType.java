@@ -30,7 +30,8 @@ import msi.gaml.operators.Cast;
 @type(name = IKeyword.RGB,
 	id = IType.COLOR,
 	wraps = { GamaColor.class, Color.class },
-	kind = ISymbolKind.Variable.REGULAR)
+	kind = ISymbolKind.Variable.REGULAR,
+	concept = { IConcept.TYPE, IConcept.COLOR })
 public class GamaColorType extends GamaType<GamaColor> {
 
 	@Override
@@ -97,7 +98,7 @@ public class GamaColorType extends GamaType<GamaColor> {
 
 	@Override
 	public GamaColor getDefault() {
-		return new GamaColor(Color.white);
+		return new GamaColor(Color.black);
 	}
 
 	@Override

@@ -1,24 +1,23 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'ExperimentDescription.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.descriptions;
 
 import java.util.*;
+import org.eclipse.emf.ecore.EObject;
 import msi.gama.common.interfaces.IKeyword;
-import msi.gama.kernel.experiment.ExperimentAgent;
+import msi.gama.kernel.experiment.*;
 import msi.gama.util.TOrderedHashMap;
 import msi.gaml.factories.ChildrenProvider;
 import msi.gaml.statements.Facets;
-import msi.gaml.types.IType;
-import org.eclipse.emf.ecore.EObject;
 
 public class ExperimentDescription extends SpeciesDescription {
 
@@ -30,25 +29,15 @@ public class ExperimentDescription extends SpeciesDescription {
 	// and keep it for when the relationship will be reversed (i.e. when the model will be *inside* the experiment)
 	public ExperimentDescription(final String keyword, final IDescription enclosing, final ChildrenProvider cp,
 		final EObject source, final Facets facets) {
-		super(keyword, null, enclosing, null, cp, source, facets);
+		super(keyword, null, enclosing, null, cp, source, facets, null);
 	}
 
 	private void addParameterNoCheck(final VariableDescription var) {
 		if ( parameters == null ) {
 			parameters = new TOrderedHashMap();
 		}
-		parameters.put(var.getName(), var);
-	}
 
-	@Override
-	protected void addVariableNoCheck(final VariableDescription var) {
-		if ( var.getName().equals(SIMULATION) ) {
-			// We are dealing with the built-in variable. We gather the precise type of the model itself and pass it
-			// to the variable (instead of its generic "agent" type).
-			final IType t = enclosing.getModelDescription().getType();
-			var.setType(t);
-		}
-		super.addVariableNoCheck(var);
+		parameters.put(var.getName(), var);
 	}
 
 	@Override
@@ -93,7 +82,7 @@ public class ExperimentDescription extends SpeciesDescription {
 	@Override
 	public Map<String, VariableDescription> getVariables() {
 		if ( variables == null ) {
-			variables = new TOrderedHashMap<String, VariableDescription>();
+			variables = new TOrderedHashMap<>();
 			// Trick to have these two variables always at the beginning.
 			variables.put(ExperimentAgent.PROJECT_PATH, null);
 			variables.put(ExperimentAgent.MODEL_PATH, null);
@@ -106,6 +95,16 @@ public class ExperimentDescription extends SpeciesDescription {
 	 */
 	public Boolean isBatch() {
 		return IKeyword.BATCH.equals(getFacets().getLabel(IKeyword.TYPE));
+	}
+
+	@Override
+	public Class<? extends ExperimentAgent> getJavaBase() {
+		return isBatch() ? BatchAgent.class : ExperimentAgent.class;
+	}
+
+	@Override
+	public ExperimentDescription getExperimentContext() {
+		return this;
 	}
 
 }

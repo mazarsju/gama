@@ -1,8 +1,15 @@
 /**
- *  mapcomparison
- *  Author: Taillandier
- *  Description: 
- */
+* Name: Raster Map Comparison
+* Author: Patrick Taillandier
+* Description: This model shows how to use different comparators to know the accuracy of a prediction model. Four comparators are used :
+* 
+* - kappa, comparing the map observed and the map simulation ; kappa simulation comparing the initial map, the map observed and the map simulation;
+* 
+* - fuzzy kappa, comparing the map observed and the map simulation but being more permissive by using fuzzy logic;
+* 
+* - fuzzy kappa simulation, comparing the map observed, the map simulation and the map initial but being more permissive by using fuzzy logic
+* Tags: grid, comparison, raster, statistic
+*/
 
 model mapcomparison
 
@@ -15,11 +22,16 @@ global {
 	list<float> nb_per_cat_sim;
 	 
 	init {
+		//Initialize randomly the category of each cell
 		ask shuffle(cell) {
 			string neigh_cat <-one_of(neighbours).cat_observed;
 			cat_init <- neigh_cat in categories ? neigh_cat : one_of(categories);
 			color_init <- color_cat[cat_init];
 		}
+		
+		//Initialize the category observed and the cat attributes of the cells according to probability : 
+		// 60% of cases, the category observed will be the same than the category initialized
+		//60% of cases, the category will be the same than the category observed
 		ask cell {
 			cat_observed <- flip(0.6) ?  cat_init : one_of(categories);
 			cat <- flip(0.6) ?  cat_observed : one_of(categories);
@@ -34,7 +46,7 @@ global {
 		loop i from: 0 to: (length(categories) * length(categories)) - 1 {
 			fuzzy_transitions[i,i] <- 1.0;	
 		}
-		list<float> similarity_per_agents <- [];
+		list<float> similarity_per_agents ;
 		write "kappa(map observed, map simulation, categories): " + kappa( cell collect (each.cat_observed),cell collect (each.cat),categories);
 		write "kappa simulation(map init, map observed, map simulation,categories): " + kappa_sim( cell collect (each.cat_init), cell collect (each.cat_observed),cell collect (each.cat),categories);
 		using topology(cell) {

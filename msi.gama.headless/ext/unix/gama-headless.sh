@@ -1,39 +1,134 @@
 #! /bin/sh
-inputFile=$1
-outputFile=$2
 memory=2048m
+outputFile=""
+inputFile=""
+declare -i i
+declare -i j
+console="no"
+tunneling="no"
+hpc="no"
+verbose="no"
+help="no"
+
+i=0
+echo ${!i}
+
+for ((i=1;i<=$#;i=$i+1))
+do
+if test ${!i} = "-m"
+then
+i=$i+1
+memory=${!i}
+i=$i+100
+fi
+done
+
+for ((i=1;i<=$#;i=$i+1))
+do
+if test ${!i} = "-c"
+then
+console="yes"
+PARAM=$PARAM\ -c
+i=$i+100
+fi
+done
+
+for ((i=1;i<=$#;i=$i+1))
+do
+if test ${!i} = "-help"
+then
+help="yes"
+i=$i+1000
+fi
+done
+
+for ((i=1;i<=$#;i=$i+1))
+do
+if test ${!i} = "-hpc"
+then
+i=$i+1
+export PARAM=$PARAM\ -hpc\ ${!i}
+hpc="yes"
+i=$i+1000
+fi
+done
+
+for ((i=1;i<=$#;i=$i+1))
+do
+if test ${!i} = "-p"
+then
+i=$i+1
+export PARAM=$PARAM\ -p
+tunneling="yes"
+i=$i+1000
+fi
+done
+
+for ((i=1;i<=$#;i=$i+1))
+do
+if test ${!i} = "-v"
+then
+i=$i+1
+export PARAM=$PARAM\ -v
+verbose="yes"
+i=$i+100
+fi
+done
+
+if [ $console = 'no' ] && [ $tunneling = 'no' ] ; then
+i=$#
+i=$i-1
+inputFile=${!i}
+fi
+
+if [ $tunneling = 'no' ] ; then
+i=$#
+i=$i
+outputFile=${!i}
+fi
+
+
 
 echo "******************************************************************"
-echo "* GAMA version 1.6.1                                             *"
-echo "* http://gama-platform.googlecode.com                            *"
-echo "* (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners              *"
+echo "* GAMA version 1.7.0 V7                                          *"
+echo "* http://gama-platform.org                                       *"
+echo "* (c) 2007-2016 UMI 209 UMMISCO IRD/UPMC & Partners              *"
 echo "******************************************************************"
-
-
-#if [[ ( "$1" == "-?" || $1 == "--help" || "x$1" == "" || "x$2" == "x" ) ]]; then
-if test "$1" = "-?" -o "$1" = "--help" -o "x$1" = "x" -o "x$2" = "x" ; then
-	echo "Help:" >&2
-	echo " command: sh gama-headless.sh [opt] xmlInputFile outputDirectory " >&2
-	echo " option:" >&2
-	echo " -m to define the memory allocated by the simulation" >&2
-	exit 1
+if [ $help = "yes" ]  ;  then
+echo ""
+echo " sh ./gama-headless.sh [Options] [XML Input] [output directory]"
+echo ""
+echo ""
+echo "List of available options:"
+echo "      -help     -- get the help of the command line"
+echo "      -m mem    -- allocate memory (ex 2048m)"
+echo "      -c        -- start the console to write xml parameter file"
+echo "      -hpc core -- set the number of core available for experimentation"
+echo "      -p        -- start piplines to interact with another framework"
+echo ""
+echo ""
+exit 1
 fi
 
 
-if test "$1" = "-m" ; then
-        memory=$2
-        inputFile=$3
-        outputFile=$4
+
+
+if [ ! -f "$inputFile" ] && [ $console = "no" ] && [ $tunneling = "no" ] ;  then
+echo "The input or output file are not specied. Please check the path of your files and output file."
+echo "Use the help for more information (./gama-headless -help)"
+exit 1
 fi
 
-if test ! -f "$inputFile"; then
-	echo "The input file does not exist. Please check the path of your input file" >&2
-	exit 1
+if   [ -d "$inputFile" ]  && [ $console = "no" ] && [ $tunneling = "no" ] ; then
+    echo "The defined input is not an XML parameter file" 
+    echo "Use the help for more information (./gama-headless -help)"
+    exit 1
 fi
 
-if test -d "$outputFile"; then
-	echo "The output directory already exist. Please check the path of your output directory" >&2
-	exit 1
+if [ $tunneling = "no" ] && [ -d "$outputFile" ]   ; then
+echo "The output directory already exist. Please check the path of your output directory" 
+echo "Use the help for more information (./gama-headless -help)"
+exit 1
 fi
 
 # assuming this file is within the gama deployment
@@ -43,13 +138,19 @@ gamaDirectory=$(cd $GAMAHOME/plugins && pwd)
 DUMPLIST=$(ls  $gamaDirectory/*.jar )
 
 for fic in $DUMPLIST; do
- GAMA=$GAMA:$fic
+GAMA=$GAMA:$fic
 done
 
+passWork=/tmp/.work
+if [ $console = 'no' ] && [ $tunneling = 'no' ] ; then
 mP=$( cd $(dirname $inputFile) && pwd -P )
 mF=$(basename $inputFile)
 mfull=$mP/$mF
+passWork=$outputFile/.work
+fi
 
 echo "GAMA is starting..."
+#exec
 
-exec java -cp $GAMA -Xms512m -Xmx$memory  -Djava.awt.headless=true org.eclipse.core.launcher.Main  -application msi.gama.headless.id4 $mfull $outputFile
+#GAMA=Gamaq
+exec java -cp $GAMA -Xms512m -Xmx$memory  -Djava.awt.headless=true org.eclipse.core.launcher.Main  -application msi.gama.headless.id4 -data $passWork $PARAM $mfull $outputFile

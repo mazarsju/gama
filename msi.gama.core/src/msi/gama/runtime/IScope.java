@@ -1,93 +1,202 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'IScope.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.runtime;
 
 import java.util.Map;
-import msi.gama.common.interfaces.*;
+
+import msi.gama.common.interfaces.IGraphics;
+import msi.gama.common.interfaces.IGui;
+import msi.gama.common.interfaces.IStepable;
 import msi.gama.common.util.RandomUtils;
 import msi.gama.kernel.experiment.IExperimentAgent;
+import msi.gama.kernel.experiment.ITopLevelAgent;
 import msi.gama.kernel.model.IModel;
-import msi.gama.kernel.simulation.*;
+import msi.gama.kernel.simulation.SimulationAgent;
+import msi.gama.kernel.simulation.SimulationClock;
 import msi.gama.metamodel.agent.IAgent;
 import msi.gama.metamodel.topology.ITopology;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gama.util.IList;
+import msi.gaml.compilation.ISymbol;
 import msi.gaml.descriptions.IDescription;
 import msi.gaml.expressions.IExpression;
-import msi.gaml.statements.*;
+import msi.gaml.statements.Arguments;
+import msi.gaml.statements.IExecutable;
 
 /**
  * Written by drogoul Modified on 18 janv. 2011
- * 
+ *
  * @todo Description
- * 
+ *
  */
 public interface IScope {
 
-	public static final Object INTERRUPTED = new Object();
-	public static final Object OK = new Object();
+	/**
+	 * Management of the scope state.
+	 * 
+	 * clear() removes any contextual information from it. setOnUserHold()
+	 * allows to suspend execution because the user is asked for something.
+	 * isOnUserHold() allows to know it. isPaused() allows to know if the
+	 * execution is paused. disableErrorReporting() allows to disable any output
+	 * of exceptions during an execution. enableErrorReporting() does the
+	 * contrary. reportErrors() will return whether this property is true or
+	 * false. setTrace() allows to turn the trace of execution on and off. When
+	 * tracing, the scope will output every execution that takes place on it.
+	 * getName() returns the name of the scope. copy() allows to make a copy of
+	 * the current scope. setInterrupted() and interrupted() respectively set
+	 * and retrieve the value of 'interrupted', which marks the end of the
+	 * execution on this scope
+	 */
 
 	public abstract void clear();
 
-	/**
-	 * Make the agent the current agent in the scope
-	 * @param agent
-	 * @see getAgentScope()
-	 */
-	public abstract boolean push(IAgent agent);
+	public abstract void setOnUserHold(boolean b);
+
+	public abstract boolean isOnUserHold();
+
+	public abstract boolean isPaused();
+
+	public abstract void disableErrorReporting();
+
+	public abstract void enableErrorReporting();
+
+	public abstract boolean reportErrors();
+
+	public abstract void setTrace(boolean trace);
+
+	public abstract Object getName();
+
+	public abstract IScope copy(String additionalName);
+
+	public boolean interrupted();
+
+	public void setInterrupted();
 
 	/**
-	 * Makes the statement the current statement in the scope
-	 * @param statement
+	 * Keeping track of symbols.
+	 * 
+	 * setCurrentSymbol() indicates which symbol (statement, variable, output,
+	 * ..) is currently executing. push() does the same but creates a local
+	 * context where variables can be manipulated. pop() discards this local
+	 * context. getCurrentSymbol() allows to retrieve the latest symbol that has
+	 * been pushed or set
 	 */
 
-	public abstract void push(IStatement statement);
+	public abstract void push(ISymbol symbol);
+
+	public abstract void pop(ISymbol symbol);
+
+	public abstract void setCurrentSymbol(ISymbol symbol);
+
+	public abstract ISymbol getCurrentSymbol();
 
 	/**
-	 * Removes the current agent
-	 * @param agent
+	 * Access to read attributes
+	 * 
+	 * Manipulates a distinct stack where the attributes read from files,
+	 * databases, etc. are temporarily stored. pushReadAttributes() allows to
+	 * store a new map of attributes. popReadAttributes() retieves the latest
+	 * pushed attributes (and removes them from the stack). peekReadAttributes()
+	 * retrieves the latest without removing them.
+	 * 
 	 */
-	public abstract void pop(IAgent agent);
+	public abstract void pushReadAttributes(Map values);
+
+	public abstract Map popReadAttributes();
+
+	public abstract Map peekReadAttributes();
 
 	/**
-	 * Removes the current statement
-	 * @param statement
+	 * Access to various agents and objects
+	 * 
+	 * setEach() allows to fix temporarily the value of the 'each'
+	 * pseudo-variable, getEach() to retrieve it.
 	 */
 
-	public abstract void pop(IStatement statement);
+	public abstract void setEach(Object value);
+
+	public abstract Object getEach();
+
+	public abstract ITopLevelAgent getRoot();
+
+	public abstract SimulationAgent getSimulationScope();
+
+	public abstract IExperimentAgent getExperiment();
 
 	/**
-	 * Executes the statement on this agent. Equivalent to:
-	 * scope.push(agent); statement.executeOn(scope); scope.pop(agent);
-	 * @param statement
-	 * @param agent
-	 * @return
-	 * @throws GamaRuntimeException
+	 * Current agent management.
+	 * 
+	 * getAgentScope() returns the currently pushed agent. push() allos to keep
+	 * trace of the current agent, while pop() will retrieve it. getAgentScope()
+	 * returns the currently pushed agent. getAgentsStack() returns a copy of
+	 * the stack of agents
+	 * 
 	 */
+
+	public abstract void pop(IAgent iAgent);
+
+	public abstract boolean push(IAgent iAgent);
+
+	public abstract IAgent getAgentScope();
+
+	public IAgent[] getAgentsStack();
+
+	/**
+	 * Access to utilities and runtime contexts
+	 * 
+	 * getRandom() gives access to the current random number generator. getGui()
+	 * returns the current user-interface component being used.
+	 */
+
+	public abstract RandomUtils getRandom();
+
+	public abstract IGui getGui();
+
+	public abstract SimulationClock getClock();
+
+	public ITopology getTopology();
+
+	public ITopology setTopology(ITopology topology);
+
+	public abstract void setGraphics(IGraphics val);
+
+	public abstract IGraphics getGraphics();
+
+	/**
+	 * Execution flow
+	 * 
+	 * 
+	 */
+
 	public abstract boolean execute(final IExecutable executable, final IAgent agent, final Arguments args,
-		Object[] result);
-
-	/**
-	 * Evaluates the expression on the agent. Equivalent to:
-	 * scope.push(agent); expr.value(scope); scope.pop(agent);
-	 * @param expr
-	 * @param agent
-	 * @return
-	 * @throws GamaRuntimeException
-	 */
+			Object[] result);
 
 	public abstract Object evaluate(IExpression expr, IAgent agent) throws GamaRuntimeException;
 
+	/**
+	 * Access to variables (agent and context)
+	 * 
+	 * 
+	 */
+
 	public abstract Object getVarValue(String varName);
+
+	public abstract Object getAgentVarValue(IAgent agent, String name) throws GamaRuntimeException;
+
+	public abstract void setAgentVarValue(IAgent agent, String name, Object v) throws GamaRuntimeException;
+
+	public abstract Object getGlobalVarValue(String name) throws GamaRuntimeException;
+
+	public abstract void setGlobalVarValue(String name, Object v) throws GamaRuntimeException;
 
 	public abstract void setVarValue(String varName, Object val);
 
@@ -97,9 +206,10 @@ public interface IScope {
 
 	public abstract void addVarWithValue(String varName, Object val);
 
-	public abstract void setEach(Object value);
-
-	public abstract Object getEach();
+	/**
+	 * Access to arguments (of actions)
+	 * 
+	 */
 
 	public abstract Object getArg(String string, int type) throws GamaRuntimeException;
 
@@ -117,76 +227,12 @@ public interface IScope {
 
 	public abstract boolean hasVar(String string);
 
-	public abstract Object getAgentVarValue(IAgent agent, String name) throws GamaRuntimeException;
-
-	// public abstract Object getAgentVarValue(String name) throws GamaRuntimeException;
-
-	// public abstract void setAgentVarValue(String name, Object v) throws GamaRuntimeException;
-
-	public abstract void setAgentVarValue(IAgent agent, String name, Object v) throws GamaRuntimeException;
-
-	// public abstract void setStatus(ExecutionStatus status);
-
-	// public abstract ExecutionStatus getStatus();
-
-	public boolean interrupted();
-
-	public void setInterrupted(boolean interrupted);
-
-	public abstract Object getGlobalVarValue(String name) throws GamaRuntimeException;
-
-	public abstract void setGlobalVarValue(String name, Object v) throws GamaRuntimeException;
-
-	public abstract Object getName();
-
-	/**
-	 * CONTEXT METHODS
-	 * Used to gather contextual information about the current simulation and
-	 * execution context
-	 */
-
-	/**
-	 * Returns the current topology to use in this scope. Either it has been set (and not unset) or
-	 * the scope uses the current agent to compute it.
-	 * @return the topology to use in the current scope
-	 */
-	public ITopology getTopology();
-
-	/**
-	 * Sets a new topological context and returns the previous one.
-	 * @param topology, the new topology to set
-	 * @return the previous topology used
-	 */
-	public ITopology setTopology(ITopology topology);
-
-	/**
-	 * Used to setup a "graphical context" in which the execution can take place. Called by the
-	 * update procedures of displays.
-	 * @param val, an instance of IGraphics
-	 */
-
-	public abstract void setGraphics(IGraphics val);
-
-	/**
-	 * Returns the instance of IGraphics currently set, or null if none.
-	 * @return
-	 */
-	public abstract IGraphics getGraphics();
-
-	/**
-	 * Returns the current agent being executed.
-	 * @return
-	 */
-	public abstract IAgent getAgentScope();
-
 	/**
 	 * Returns the current simulation in which this scope is defined.
-	 * @return the current simulation or null if none is defined (unlikely as the scope is created
-	 *         by a simulation)
+	 * 
+	 * @return the current simulation or null if none is defined (unlikely as
+	 *         the scope is created by a simulation)
 	 */
-	public abstract SimulationAgent getSimulationScope();
-
-	public abstract IExperimentAgent getExperiment();
 
 	public abstract IDescription getExperimentContext();
 
@@ -194,17 +240,15 @@ public interface IScope {
 
 	public abstract IModel getModel();
 
-	public abstract SimulationClock getClock();
-
-	public abstract IScope copy();
-
 	/**
-	 * Indicates that a loop is finishing : should clear any _loop_halted status present
+	 * Indicates that a loop is finishing : should clear any _loop_halted status
+	 * present
 	 */
 	public abstract void popLoop();
 
 	/**
-	 * Indicates that an action is finishing : should clear any _action_halted status present
+	 * Indicates that an action is finishing : should clear any _action_halted
+	 * status present
 	 */
 	public abstract void popAction();
 
@@ -240,24 +284,5 @@ public interface IScope {
 	/**
 	 * @return the current statement or null if none
 	 */
-	public abstract IStatement getStatement();
-
-	public abstract void setTrace(boolean trace);
-
-	/**
-	 * @param abstractStatement
-	 */
-	public abstract void setStatement(IStatement abstractStatement);
-
-	/**
-	 * @return
-	 */
-	public abstract RandomUtils getRandom();
-
-	public void disableErrorReporting();
-
-	public void enableErrorReporting();
-
-	public boolean reportErrors();
 
 }

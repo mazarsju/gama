@@ -547,7 +547,7 @@ species people skills: [advanced_driving] control: simple_bdi {
 //	}
 	
 	perceive target:catastrophe in: 100{
-		focus var: location agent: myself;
+		focus var: location /*agent: myself*/;
 		ask myself{
 			do clear_intentions();
 			do clear_desires();
@@ -609,8 +609,8 @@ species people skills: [advanced_driving] control: simple_bdi {
 		}
 	}
 	
-	rule belief: new_predicate("location_catastrophe") desire: new_predicate("shelter") when: !has_belief(new_predicate("shelter"));
-	rule belief: new_predicate("shelter") desire: diying;
+	rule belief: new_predicate("location_catastrophe") new_desire: new_predicate("shelter") when: !has_belief(new_predicate("shelter"));
+	rule belief: new_predicate("shelter") new_desire: diying;
 	
 	plan bouge when: (current_path = nil or recompute_path or final_target = nil)and target_node != nil and !catast intention: bouger 
 		finished_when: (current_path != nil) or (has_belief(new_predicate("location_catastrophe"))){

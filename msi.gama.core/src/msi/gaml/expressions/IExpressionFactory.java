@@ -1,29 +1,36 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'IExpressionFactory.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.expressions;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+
+import org.eclipse.emf.ecore.EObject;
+
+import msi.gama.metamodel.agent.IAgent;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
-import msi.gaml.descriptions.*;
+import msi.gaml.descriptions.IDescription;
+import msi.gaml.descriptions.IExpressionDescription;
+import msi.gaml.descriptions.StatementDescription;
 import msi.gaml.operators.IUnits;
 import msi.gaml.statements.Arguments;
-import msi.gaml.types.*;
-import org.eclipse.emf.ecore.EObject;
+import msi.gaml.types.IType;
+import msi.gaml.types.Types;
 
 /**
  * Written by drogoul Modified on 27 d�c. 2010
- * 
+ *
  * @todo Description
- * 
+ *
  */
 public interface IExpressionFactory {
 
@@ -37,7 +44,9 @@ public interface IExpressionFactory {
 	public abstract ConstantExpression createConst(final Object val, final IType type) throws GamaRuntimeException;
 
 	public abstract ConstantExpression createConst(final Object val, final IType type, String name)
-		throws GamaRuntimeException;
+			throws GamaRuntimeException;
+
+	public SpeciesConstantExpression createSpeciesConstant(final IType type);
 
 	public abstract IExpression createExpr(final IExpressionDescription s, final IDescription context);
 
@@ -46,7 +55,7 @@ public interface IExpressionFactory {
 	public abstract ConstantExpression getUnitExpr(final String unit);
 
 	Map<String, IExpressionDescription> createArgumentMap(StatementDescription action, IExpressionDescription args,
-		IDescription context);
+			IDescription context);
 
 	public IExpressionCompiler getParser();
 
@@ -63,7 +72,7 @@ public interface IExpressionFactory {
 	 * @param args
 	 * @return
 	 */
-	IExpression createOperator(String op, IDescription context, EObject currentEObject, IExpression ... args);
+	IExpression createOperator(String op, IDescription context, EObject currentEObject, IExpression... args);
 
 	/**
 	 * @param type
@@ -89,6 +98,7 @@ public interface IExpressionFactory {
 
 	/**
 	 * Creates a new unit expression
+	 * 
 	 * @param value
 	 * @param t
 	 * @param doc
@@ -105,6 +115,8 @@ public interface IExpressionFactory {
 	 * @return
 	 */
 	IExpression createAction(String op, IDescription callerContext, StatementDescription action, IExpression call,
-		Arguments arguments);
+			Arguments arguments);
+
+	public abstract IExpression createTemporaryActionForAgent(IAgent agent, String expression);
 
 }

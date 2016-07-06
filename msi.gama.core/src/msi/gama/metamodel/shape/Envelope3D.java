@@ -11,9 +11,19 @@
  **********************************************************************************************/
 package msi.gama.metamodel.shape;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.opengis.geometry.MismatchedDimensionException;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.CoordinateFilter;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
+
+import msi.gaml.operators.Comparison;
+import msi.gaml.operators.fastmaths.FastMath;
 import msi.gaml.types.GamaGeometryType;
-import com.vividsolutions.jts.geom.*;
 
 // import org.opengis.geometry.MismatchedDimensionException;
 
@@ -30,7 +40,9 @@ import com.vividsolutions.jts.geom.*;
 public class Envelope3D extends Envelope {
 
 	public static Envelope3D of(final Geometry g) {
-		if ( g == null || g.isEmpty() ) { return new Envelope3D(); }
+		if (g == null || g.isEmpty()) {
+			return new Envelope3D();
+		}
 		final Envelope3D env = new Envelope3D();
 		g.apply(new CoordinateFilter() {
 
@@ -43,12 +55,13 @@ public class Envelope3D extends Envelope {
 	}
 
 	public static Envelope3D of(final GamaShape s) {
-		Envelope3D env = of(s.getInnerGeometry());
-		if ( s.hasAttribute(IShape.DEPTH_ATTRIBUTE) ) {
-			// Note: A.G 27/03/14 If I put center.setZ(center.z + d ) it gives the issue 898 (that was introduces by
+		final Envelope3D env = of(s.getInnerGeometry());
+		if (s.hasAttribute(IShape.DEPTH_ATTRIBUTE)) {
+			// Note: A.G 27/03/14 If I put center.setZ(center.z + d ) it gives
+			// the issue 898 (that was introduces by
 			// revision 9047);
 			// Double d = (Double) s.getAttribute(IShape.DEPTH_ATTRIBUTE);
-			GamaPoint center = env.centre();
+			final GamaPoint center = env.centre();
 			center.setZ(center.z);
 			env.expandToInclude(center);
 		}
@@ -56,13 +69,20 @@ public class Envelope3D extends Envelope {
 	}
 
 	public static Envelope3D of(final Envelope e) {
-		Envelope3D env = new Envelope3D();
+		final Envelope3D env = new Envelope3D();
 		env.init(e);
 		return env;
 	}
 
+	public static Envelope3D withYNegated(final Envelope e) {
+		final Envelope3D env = new Envelope3D();
+		env.init(e);
+		env.init(env.getMinX(), env.getMaxX(), -env.getMinY(), -env.getMaxY(), env.minz, env.maxz);
+		return env;
+	}
+
 	public static Envelope3D of(final Coordinate p) {
-		Envelope3D env = new Envelope3D();
+		final Envelope3D env = new Envelope3D();
 		env.init(p);
 		return env;
 		// return of(p.getInnerGeometry());
@@ -101,9 +121,9 @@ public class Envelope3D extends Envelope {
 	 *            the second z-value
 	 */
 	public void init(final double x1, final double x2, final double y1, final double y2, final double z1,
-		final double z2) {
+			final double z2) {
 		init(x1, x2, y1, y2);
-		if ( z1 < z2 ) {
+		if (z1 < z2) {
 			minz = z1;
 			maxz = z2;
 		} else {
@@ -141,7 +161,7 @@ public class Envelope3D extends Envelope {
 	@Override
 	public void init(final Envelope env) {
 		super.init(env);
-		if ( env instanceof Envelope3D ) {
+		if (env instanceof Envelope3D) {
 			this.minz = ((Envelope3D) env).getMinZ();
 			this.maxz = ((Envelope3D) env).getMaxZ();
 		}
@@ -176,7 +196,9 @@ public class Envelope3D extends Envelope {
 	 * @return max z - min z, or 0 if this is a null <code>Envelope</code>
 	 */
 	public double getDepth() {
-		if ( isNull() ) { return 0; }
+		if (isNull()) {
+			return 0;
+		}
 		return maxz - minz;
 	}
 
@@ -207,7 +229,9 @@ public class Envelope3D extends Envelope {
 	 * @return 0.0 if the envelope is null
 	 */
 	public double getVolume() {
-		if ( isNull() ) { return 0.0; }
+		if (isNull()) {
+			return 0.0;
+		}
 		return getWidth() * getHeight() * getDepth();
 	}
 
@@ -218,8 +242,10 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public double minExtent() {
-		if ( isNull() ) { return 0.0; }
-		return Math.min(getWidth(), Math.min(getHeight(), getDepth()));
+		if (isNull()) {
+			return 0.0;
+		}
+		return FastMath.min(getWidth(), FastMath.min(getHeight(), getDepth()));
 	}
 
 	/**
@@ -229,13 +255,15 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public double maxExtent() {
-		if ( isNull() ) { return 0.0; }
-		return Math.max(getWidth(), Math.max(getHeight(), getDepth()));
+		if (isNull()) {
+			return 0.0;
+		}
+		return FastMath.max(getWidth(), FastMath.max(getHeight(), getDepth()));
 	}
 
 	/**
-	 * Enlarges this <code>Envelope</code> so that it contains the given {@link Coordinate}. Has no effect if the point
-	 * is already on or within
+	 * Enlarges this <code>Envelope</code> so that it contains the given
+	 * {@link Coordinate}. Has no effect if the point is already on or within
 	 * the envelope.
 	 *
 	 * @param p
@@ -268,13 +296,15 @@ public class Envelope3D extends Envelope {
 	 *            the distance to expand the envelope along the the Y axis
 	 */
 	public void expandBy(final double deltaX, final double deltaY, final double deltaZ) {
-		if ( isNull() ) { return; }
+		if (isNull()) {
+			return;
+		}
 		minz -= deltaZ;
 		maxz += deltaZ;
 		expandBy(deltaX, deltaY);
 
 		// check for envelope disappearing
-		if ( minz > maxz ) {
+		if (minz > maxz) {
 			setToNull();
 		}
 	}
@@ -294,23 +324,24 @@ public class Envelope3D extends Envelope {
 	 *            to
 	 */
 	public void expandToInclude(final double x, final double y, final double z) {
-		if ( isNull() ) {
+		if (isNull()) {
 			expandToInclude(x, y);
 			minz = z;
 			maxz = z;
 		} else {
 			expandToInclude(x, y);
-			if ( z < minz ) {
+			if (z < minz) {
 				minz = z;
 			}
-			if ( z > maxz ) {
+			if (z > maxz) {
 				maxz = z;
 			}
 		}
 	}
 
 	/**
-	 * Translates this envelope by given amounts in the X and Y direction. Returns the envelope
+	 * Translates this envelope by given amounts in the X and Y direction.
+	 * Returns the envelope
 	 *
 	 * @param transX
 	 *            the amount to translate along the X axis
@@ -320,9 +351,11 @@ public class Envelope3D extends Envelope {
 	 *            the amount to translate along the Z axis
 	 */
 	public Envelope3D translate(final double transX, final double transY, final double transZ) {
-		if ( isNull() ) { return this; }
+		if (isNull()) {
+			return this;
+		}
 		init(getMinX() + transX, getMaxX() + transX, getMinY() + transY, getMaxY() + transY, getMinZ() + transZ,
-			getMaxZ() + transZ);
+				getMaxZ() + transZ);
 		return this;
 	}
 
@@ -335,9 +368,11 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public GamaPoint centre() {
-		if ( isNull() ) { return null; }
+		if (isNull()) {
+			return null;
+		}
 		return new GamaPoint((getMinX() + getMaxX()) / 2.0, (getMinY() + getMaxY()) / 2.0,
-			(getMinZ() + getMaxZ()) / 2.0);
+				(getMinZ() + getMaxZ()) / 2.0);
 	}
 
 	/**
@@ -351,7 +386,9 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public boolean intersects(final Envelope other) {
-		if ( !super.intersects(other) ) { return false; }
+		if (!super.intersects(other)) {
+			return false;
+		}
 		return !(getMinZOf(other) > maxz || getMaxZOf(other) < minz);
 	}
 
@@ -361,7 +398,8 @@ public class Envelope3D extends Envelope {
 	 *
 	 * @param p
 	 *            the <code>Coordinate</code> to be tested
-	 * @return <code>true</code> if the point overlaps this <code>Envelope</code>
+	 * @return <code>true</code> if the point overlaps this
+	 *         <code>Envelope</code>
 	 */
 	@Override
 	public boolean intersects(final Coordinate p) {
@@ -378,10 +416,13 @@ public class Envelope3D extends Envelope {
 	 *            the y-ordinate of the point
 	 * @param z
 	 *            the z-ordinate of the point
-	 * @return <code>true</code> if the point overlaps this <code>Envelope</code>
+	 * @return <code>true</code> if the point overlaps this
+	 *         <code>Envelope</code>
 	 */
 	protected boolean intersects(final double x, final double y, final double z) {
-		if ( isNull() ) { return false; }
+		if (isNull()) {
+			return false;
+		}
 		return intersects(x, y) && !(z < minz || z > maxz);
 	}
 
@@ -389,14 +430,18 @@ public class Envelope3D extends Envelope {
 	 * Tests if the given point lies in or on the envelope.
 	 *
 	 * @param x
-	 *            the x-coordinate of the point which this <code>Envelope</code> is being checked for containing
+	 *            the x-coordinate of the point which this <code>Envelope</code>
+	 *            is being checked for containing
 	 * @param y
-	 *            the y-coordinate of the point which this <code>Envelope</code> is being checked for containing
+	 *            the y-coordinate of the point which this <code>Envelope</code>
+	 *            is being checked for containing
 	 * @return <code>true</code> if <code>(x, y)</code> lies in the interior or
 	 *         on the boundary of this <code>Envelope</code>.
 	 */
 	protected boolean covers(final double x, final double y, final double z) {
-		if ( isNull() ) { return false; }
+		if (isNull()) {
+			return false;
+		}
 		return covers(x, y) && z >= minz && z <= maxz;
 	}
 
@@ -415,8 +460,8 @@ public class Envelope3D extends Envelope {
 	}
 
 	/**
-	 * Tests if the <code>Envelope other</code> lies wholely inside this <code>Envelope</code> (inclusive of the
-	 * boundary).
+	 * Tests if the <code>Envelope other</code> lies wholely inside this
+	 * <code>Envelope</code> (inclusive of the boundary).
 	 *
 	 * @param other
 	 *            the <code>Envelope</code> to check
@@ -424,8 +469,12 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public boolean covers(final Envelope other) {
-		if ( isNull() || other.isNull() ) { return false; }
-		if ( !super.covers(other) ) { return false; }
+		if (isNull() || other.isNull()) {
+			return false;
+		}
+		if (!super.covers(other)) {
+			return false;
+		}
 		return getMinZOf(other) >= minz && getMaxZOf(other) <= maxz;
 	}
 
@@ -436,37 +485,45 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public double distance(final Envelope env) {
-		if ( intersects(env) ) { return 0; }
+		if (intersects(env)) {
+			return 0;
+		}
 
 		double dx = 0.0;
-		if ( getMaxX() < env.getMinX() ) {
+		if (getMaxX() < env.getMinX()) {
 			dx = env.getMinX() - getMaxX();
-		} else if ( getMinX() > env.getMaxX() ) {
+		} else if (getMinX() > env.getMaxX()) {
 			dx = getMinX() - env.getMaxX();
 		}
 
 		double dy = 0.0;
-		if ( getMaxY() < env.getMinY() ) {
+		if (getMaxY() < env.getMinY()) {
 			dy = env.getMinY() - getMaxY();
-		} else if ( getMinY() > env.getMaxY() ) {
+		} else if (getMinY() > env.getMaxY()) {
 			dy = getMinY() - env.getMaxY();
 		}
 
 		double dz = 0.0;
-		double otherMinZ = getMinZOf(env);
-		double otherMaxZ = getMaxZOf(env);
-		if ( maxz < otherMinZ ) {
+		final double otherMinZ = getMinZOf(env);
+		final double otherMaxZ = getMaxZOf(env);
+		if (maxz < otherMinZ) {
 			dz = otherMinZ - maxz;
-		} else if ( minz > otherMaxZ ) {
+		} else if (minz > otherMaxZ) {
 			dz = minz - otherMaxZ;
 		}
 
 		// if either is zero, the envelopes overlap either vertically or
 		// horizontally
-		if ( dx == 0.0 && dz == 0.0 ) { return dy; }
-		if ( dy == 0.0 && dz == 0.0 ) { return dx; }
-		if ( dx == 0.0 && dy == 0.0 ) { return dz; }
-		return Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (dx == 0.0 && dz == 0.0) {
+			return dy;
+		}
+		if (dy == 0.0 && dz == 0.0) {
+			return dx;
+		}
+		if (dx == 0.0 && dy == 0.0) {
+			return dz;
+		}
+		return FastMath.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -478,26 +535,36 @@ public class Envelope3D extends Envelope {
 	/**
 	 * Creates an envelope for a region defined by maximum and minimum values.
 	 *
-	 * @param x1 The first x-value.
-	 * @param x2 The second x-value.
-	 * @param y1 The first y-value.
-	 * @param y2 The second y-value.
-	 * @param z1 The first y-value.
-	 * @param z2 The second y-value.
-	 * @param crs The coordinate reference system.
+	 * @param x1
+	 *            The first x-value.
+	 * @param x2
+	 *            The second x-value.
+	 * @param y1
+	 *            The first y-value.
+	 * @param y2
+	 *            The second y-value.
+	 * @param z1
+	 *            The first y-value.
+	 * @param z2
+	 *            The second y-value.
+	 * @param crs
+	 *            The coordinate reference system.
 	 *
-	 * @throws MismatchedDimensionException if the CRS dimension is not valid.
+	 * @throws MismatchedDimensionException
+	 *             if the CRS dimension is not valid.
 	 */
 	public Envelope3D(final double x1, final double x2, final double y1, final double y2, final double z1,
-		final double z2) {
+			final double z2) {
 		init(x1, x2, y1, y2, z1, z2);
 	}
 
 	/**
 	 * Creates a new envelope from an existing envelope.
 	 *
-	 * @param envelope The envelope to initialize from
-	 * @throws MismatchedDimensionException if the CRS dimension is not valid.
+	 * @param envelope
+	 *            The envelope to initialize from
+	 * @throws MismatchedDimensionException
+	 *             if the CRS dimension is not valid.
 	 *
 	 */
 	public Envelope3D(final Envelope3D envelope) {
@@ -507,13 +574,16 @@ public class Envelope3D extends Envelope {
 	/**
 	 * Creates a new envelope from an existing JTS envelope.
 	 *
-	 * @param envelope The envelope to initialize from.
-	 * @param crs The coordinate reference system.
-	 * @throws MismatchedDimensionExceptionif the CRS dimension is not valid.
+	 * @param envelope
+	 *            The envelope to initialize from.
+	 * @param crs
+	 *            The coordinate reference system.
+	 * @throws MismatchedDimensionExceptionif
+	 *             the CRS dimension is not valid.
 	 */
 	public Envelope3D(final Envelope envelope) {
 		super(envelope);
-		if ( envelope instanceof Envelope3D ) {
+		if (envelope instanceof Envelope3D) {
 			this.minz = ((Envelope3D) envelope).getMinZ();
 			this.maxz = ((Envelope3D) envelope).getMaxZ();
 		}
@@ -530,47 +600,51 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public Envelope3D intersection(final Envelope env) {
-		if ( isNull() || env.isNull() || !intersects(env) ) { return new Envelope3D(); }
-		Envelope xyInt = super.intersection(env);
-		double otherMinZ = getMinZOf(env);
-		double intMinZ = minz > otherMinZ ? minz : otherMinZ;
-		double otherMaxZ = getMaxZOf(env);
-		double intMaxZ = maxz < otherMaxZ ? maxz : otherMaxZ;
+		if (isNull() || env.isNull() || !intersects(env)) {
+			return new Envelope3D();
+		}
+		final Envelope xyInt = super.intersection(env);
+		final double otherMinZ = getMinZOf(env);
+		final double intMinZ = minz > otherMinZ ? minz : otherMinZ;
+		final double otherMaxZ = getMaxZOf(env);
+		final double intMaxZ = maxz < otherMaxZ ? maxz : otherMaxZ;
 		return new Envelope3D(xyInt.getMinX(), xyInt.getMaxX(), xyInt.getMinY(), xyInt.getMaxY(), intMinZ, intMaxZ);
 	}
 
 	/**
-	 * Computes the list of envelopes (from 2 to 4, possibily 0 if env covers this) resulting from the extrusion of env from this. Only in 2D for the moment.
-	 * Does not return null envelopes.
+	 * Computes the list of envelopes (from 2 to 4, possibily 0 if env covers
+	 * this) resulting from the extrusion of env from this. Only in 2D for the
+	 * moment. Does not return null envelopes.
 	 *
 	 */
 	public List<Envelope> extrusion(final Envelope env) {
-		List<Envelope> list = new ArrayList();
-		double x1 = getMinX();
-		double x2 = getMaxX();
-		double y1 = getMinY();
-		double y2 = getMaxY();
-		double xx1 = env.getMinX();
-		double xx2 = env.getMaxX();
-		double yy1 = env.getMinY();
-		double yy2 = env.getMaxY();
-		if ( x2 >= x1 && yy1 >= y1 ) {
+		final List<Envelope> list = new ArrayList();
+		final double x1 = getMinX();
+		final double x2 = getMaxX();
+		final double y1 = getMinY();
+		final double y2 = getMaxY();
+		final double xx1 = env.getMinX();
+		final double xx2 = env.getMaxX();
+		final double yy1 = env.getMinY();
+		final double yy2 = env.getMaxY();
+		if (x2 >= x1 && yy1 >= y1) {
 			list.add(new Envelope(x1, x2, y1, yy1));
 		}
-		if ( xx1 >= x1 && y2 >= yy1 ) {
+		if (xx1 >= x1 && y2 >= yy1) {
 			list.add(new Envelope(x1, xx1, yy1, y2));
 		}
-		if ( x2 >= xx1 && y2 >= yy2 ) {
+		if (x2 >= xx1 && y2 >= yy2) {
 			list.add(new Envelope(xx1, x2, yy2, y2));
 		}
-		if ( x2 >= xx2 && yy2 >= yy1 ) {
+		if (x2 >= xx2 && yy2 >= yy1) {
 			list.add(new Envelope(xx2, x2, yy1, yy2));
 		}
 		return list;
 	}
 
 	/**
-	 * Enlarges this <code>Envelope</code> so that it contains the <code>other</code> Envelope. Has no effect if <code>other</code> is
+	 * Enlarges this <code>Envelope</code> so that it contains the
+	 * <code>other</code> Envelope. Has no effect if <code>other</code> is
 	 * wholly on or within the envelope.
 	 *
 	 * @param other
@@ -578,19 +652,21 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public void expandToInclude(final Envelope other) {
-		if ( other.isNull() ) { return; }
-		double otherMinZ = getMinZOf(other);
-		double otherMaxZ = getMaxZOf(other);
-		if ( isNull() ) {
+		if (other.isNull()) {
+			return;
+		}
+		final double otherMinZ = getMinZOf(other);
+		final double otherMaxZ = getMaxZOf(other);
+		if (isNull()) {
 			super.expandToInclude(other);
 			minz = otherMinZ;
 			maxz = otherMaxZ;
 		} else {
 			super.expandToInclude(other);
-			if ( otherMinZ < minz ) {
+			if (otherMinZ < minz) {
 				minz = otherMinZ;
 			}
-			if ( otherMaxZ > maxz ) {
+			if (otherMaxZ > maxz) {
 				maxz = otherMaxZ;
 			}
 		}
@@ -601,7 +677,9 @@ public class Envelope3D extends Envelope {
 	 * @return
 	 */
 	private double getMaxZOf(final Envelope other) {
-		if ( other instanceof Envelope3D ) { return ((Envelope3D) other).maxz; }
+		if (other instanceof Envelope3D) {
+			return ((Envelope3D) other).maxz;
+		}
 		return 0d;
 	}
 
@@ -610,7 +688,9 @@ public class Envelope3D extends Envelope {
 	 * @return
 	 */
 	private double getMinZOf(final Envelope other) {
-		if ( other instanceof Envelope3D ) { return ((Envelope3D) other).minz; }
+		if (other instanceof Envelope3D) {
+			return ((Envelope3D) other).minz;
+		}
 		return 0d;
 	}
 
@@ -624,7 +704,7 @@ public class Envelope3D extends Envelope {
 		int result = super.hashCode();
 		result = 37 * result + Coordinate.hashCode(minz);
 		result = 37 * result + Coordinate.hashCode(maxz);
-		int code = result ^ (int) serialVersionUID;
+		final int code = result ^ (int) serialVersionUID;
 		return code;
 	}
 
@@ -633,10 +713,17 @@ public class Envelope3D extends Envelope {
 	 */
 	@Override
 	public boolean equals(final Object other) {
-		if ( !(other instanceof Envelope3D) ) { return false; }
-		Envelope3D otherEnvelope = (Envelope3D) other;
-		if ( isNull() ) { return otherEnvelope.isNull(); }
-		if ( super.equals(other) && minz == otherEnvelope.getMinZ() && maxz == otherEnvelope.getMaxZ() ) { return true; }
+		if (!(other instanceof Envelope3D)) {
+			return false;
+		}
+		final Envelope3D otherEnvelope = (Envelope3D) other;
+		if (isNull()) {
+			return otherEnvelope.isNull();
+		}
+		if (super.equals(other) && Comparison.equal(minz, otherEnvelope.getMinZ())
+				&& Comparison.equal(maxz, otherEnvelope.getMaxZ())) {
+			return true;
+		}
 		return false;
 	}
 
@@ -645,20 +732,25 @@ public class Envelope3D extends Envelope {
 	}
 
 	public Geometry toGeometry() {
-		if ( isFlat() ) { return GamaGeometryType.buildRectangle(getWidth(), getHeight(), centre()).getInnerGeometry(); }
+		if (isFlat()) {
+			return GamaGeometryType.buildRectangle(getWidth(), getHeight(), centre()).getInnerGeometry();
+		}
 		return GamaGeometryType.buildBox(getWidth(), getHeight(), getDepth(), centre()).getInnerGeometry();
 
 		// return GeometryUtils.FACTORY.createPolygon(
-		// GeometryUtils.FACTORY.createLinearRing(new Coordinate[] { new Coordinate(getMinX(), getMinY()),
-		// new Coordinate(getMaxX(), getMinY()), new Coordinate(getMaxX(), getMaxY()),
-		// new Coordinate(getMinX(), getMaxY()), new Coordinate(getMinX(), getMinY()) }), null);
+		// GeometryUtils.FACTORY.createLinearRing(new Coordinate[] { new
+		// Coordinate(getMinX(), getMinY()),
+		// new Coordinate(getMaxX(), getMinY()), new Coordinate(getMaxX(),
+		// getMaxY()),
+		// new Coordinate(getMinX(), getMaxY()), new Coordinate(getMinX(),
+		// getMinY()) }), null);
 
 	}
 
 	@Override
 	public String toString() {
-		return "Env[" + getMinX() + " : " + getMaxX() + ", " + getMinY() + " : " + getMaxY() + ",  " + minz + " : " +
-			maxz + "]";
+		return "Env[" + getMinX() + " : " + getMaxX() + ", " + getMinY() + " : " + getMaxY() + ",  " + minz + " : "
+				+ maxz + "]";
 	}
 
 }

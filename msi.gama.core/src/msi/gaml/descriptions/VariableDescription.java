@@ -1,31 +1,34 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'VariableDescription.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.descriptions;
 
-import gnu.trove.set.hash.*;
 import java.util.*;
+import org.eclipse.emf.ecore.EObject;
+import gnu.trove.set.hash.*;
+import msi.gama.common.interfaces.IGamlIssue;
+import msi.gama.precompiler.ITypeProvider;
+import msi.gama.util.GAML;
 import msi.gaml.compilation.GamaHelper;
 import msi.gaml.descriptions.SymbolSerializer.VarSerializer;
 import msi.gaml.expressions.*;
 import msi.gaml.factories.ChildrenProvider;
 import msi.gaml.statements.Facets;
-import msi.gaml.types.IType;
-import org.eclipse.emf.ecore.EObject;
+import msi.gaml.types.*;
 
 /**
  * Written by drogoul Modified on 16 mai 2010
- * 
+ *
  * @todo Description
- * 
+ *
  */
 public class VariableDescription extends SymbolDescription {
 
@@ -33,11 +36,11 @@ public class VariableDescription extends SymbolDescription {
 	// Represents the variable that are not declared in the species but that the variable depends
 	// on.
 	private Set<String> extraDependencies;
-
+	private String plugin;
 	private int definitionOrder = -1;
-	private IExpression varExpr = null;
+	// private IExpression varExpr = null;
 	private IType type = null;
-	private final boolean _isGlobal,/* _isFunction, */_isNotModifiable, _isParameter;
+	private final boolean _isGlobal, /* _isFunction, */_isNotModifiable, _isParameter;
 	private boolean _isUpdatable;
 	// for variables automatically added to species for containing micro-agents
 	private boolean _isSyntheticSpeciesContainer;
@@ -46,12 +49,11 @@ public class VariableDescription extends SymbolDescription {
 	public VariableDescription(final String keyword, final IDescription superDesc, final ChildrenProvider cp,
 		final EObject source, final Facets facets) {
 		super(keyword, superDesc, cp, source, facets);
-		boolean isExperimentParameter = facets.equals(KEYWORD, PARAMETER);
-		if ( !facets.containsKey(TYPE) && !isExperimentParameter ) {
+		if ( !facets.containsKey(TYPE) && !isExperimentParameter() ) {
 			facets.putAsLabel(TYPE, keyword);
 		}
 		_isGlobal = superDesc instanceof ModelDescription;
-		_isParameter = isExperimentParameter || facets.containsKey(PARAMETER);
+		_isParameter = isExperimentParameter() || facets.containsKey(PARAMETER);
 		_isNotModifiable = facets.containsKey(FUNCTION) || facets.equals(CONST, TRUE) && !_isParameter;
 		_isUpdatable = !_isNotModifiable && (facets.containsKey(VALUE) || facets.containsKey(UPDATE));
 
@@ -75,7 +77,7 @@ public class VariableDescription extends SymbolDescription {
 		if ( dependencies != null ) {
 			dependencies.clear();
 		}
-		varExpr = null;
+		// varExpr = null;
 		super.dispose();
 		// isDisposed = true;
 	}
@@ -128,11 +130,60 @@ public class VariableDescription extends SymbolDescription {
 
 	@Override
 	public IType getType() {
-
 		if ( type == null ) {
 			type = super.getType();
 		}
 		return type;
+	}
+
+	/**
+	 * Returns the type denoted by this string. This is a contextual retrieval, as the string can contain the value of one of the ITypeProvider constants.
+	 * Method getTypeNamed()
+	 * @see msi.gaml.descriptions.SymbolDescription#getTypeNamed(java.lang.String)
+	 */
+	@Override
+	public IType getTypeNamed(final String s) {
+		IType result = super.getTypeNamed(s);
+		if ( result == Types.NO_TYPE ) {
+			int provider = GamaIntegerType.staticCast(null, s, null, false);
+			switch (provider) {
+				case ITypeProvider.MACRO_TYPE:
+					IDescription species = this.getEnclosingDescription();
+					IDescription macro = species.getEnclosingDescription();
+					if ( macro == null ) { return Types.AGENT; }
+					return macro.getType();
+				case ITypeProvider.OWNER_TYPE: // This represents the type of the agents of the enclosing species
+					if ( this.getEnclosingDescription() == null ) {
+						return Types.AGENT;
+					}
+					return this.getEnclosingDescription().getType();
+				case ITypeProvider.MODEL_TYPE: // This represents the type of the model (used for simulations)
+					ModelDescription md = this.getModelDescription();
+					if ( md == null ) { return Types.get("model"); }
+					return md.getType();
+				case ITypeProvider.MIRROR_TYPE:
+					if ( getEnclosingDescription() == null ) {
+						return null;
+					}
+					IExpression mirrors = getEnclosingDescription().getFacets().getExpr(MIRRORS);
+					if ( mirrors != null ) {
+						// We try to change the type of the 'target' variable if the expression contains only agents from the
+						// same species
+						IType t = mirrors.getType().getContentType();
+						if ( t.isAgentType() && t.id() != IType.AGENT ) {
+							getEnclosingDescription().info(
+								"The 'target' attribute will be of type " + t.getSpeciesName(), IGamlIssue.GENERAL,
+								MIRRORS);
+						}
+						return t;
+					} else {
+						getEnclosingDescription().info(
+							"No common species detected in 'mirrors'. The 'target' variable will be of generic type 'agent'",
+							IGamlIssue.WRONG_TYPE, MIRRORS);
+					}
+			}
+		}
+		return result;
 	}
 
 	public Set<VariableDescription> usedVariablesIn(final Map<String, VariableDescription> vars) {
@@ -196,11 +247,20 @@ public class VariableDescription extends SymbolDescription {
 		return _isParameter;
 	}
 
-	public IExpression getVarExpr() {
-		if ( varExpr != null ) { return varExpr; }
-		varExpr =
-			msi.gama.util.GAML.getExpressionFactory().createVar(getName(), getType(), isNotModifiable(),
-				_isGlobal ? IVarExpression.GLOBAL : IVarExpression.AGENT, this.getEnclosingDescription());
+	// If hasField is true, should not try to build a GlobalVarExpr
+	public IExpression getVarExpr(final boolean asField) {
+		boolean asGlobal = _isGlobal && !asField;
+
+		// if ( varExpr != null ) {
+		// if (asGlobal && ((IVarExpression)varExpr).)
+		//
+		//
+		// return varExpr;
+		//
+		//
+		// }
+		IExpression varExpr = GAML.getExpressionFactory().createVar(getName(), getType(), isNotModifiable(),
+			asGlobal ? IVarExpression.GLOBAL : IVarExpression.AGENT, this.getEnclosingDescription());
 		return varExpr;
 	}
 
@@ -235,9 +295,8 @@ public class VariableDescription extends SymbolDescription {
 		String title = "a" + (isParameter() ? "  parameter " : isNotModifiable() ? " constant " : "n attribute ");
 		if ( getEnclosingDescription() == null ) { return "This statement declares " + getName() + " as " + title +
 			"<br/>" + super.getDocumentation(); }
-		String s =
-			"This statement declares " + getName() + " as " + title + ", of type " + getType().getTitle() + ", in " +
-				this.getEnclosingDescription().getTitle() + "<br/>";
+		String s = "This statement declares " + getName() + " as " + title + ", of type " + getType().getTitle() +
+			", in " + this.getEnclosingDescription().getTitle() + "<br/>";
 		return s + super.getDocumentation();
 	}
 
@@ -259,10 +318,6 @@ public class VariableDescription extends SymbolDescription {
 		return set;
 	}
 
-	public void setType(final IType t) {
-		type = t;
-	}
-
 	public boolean isGlobal() {
 		return _isGlobal;
 	}
@@ -270,6 +325,19 @@ public class VariableDescription extends SymbolDescription {
 	@Override
 	public List<IDescription> getChildren() {
 		return Collections.EMPTY_LIST;
+	}
+
+	@Override
+	public String getDefiningPlugin() {
+		return plugin;
+	}
+
+	/**
+	 * @param plugin name
+	 */
+	@Override
+	public void setDefiningPlugin(final String plugin) {
+		this.plugin = plugin;
 	}
 
 }

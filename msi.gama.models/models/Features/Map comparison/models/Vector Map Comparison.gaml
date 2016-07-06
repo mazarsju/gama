@@ -1,8 +1,18 @@
 /**
- *  mapcomparison
- *  Author: Taillandier
- *  Description: 
- */
+* Name: Vector Map Comparison
+* Author: Patrick Taillandier
+* Description: This model shows how to use different comparators to know the accuracy of a prediction model. Four comparators are used :
+* 
+* - kappa, comparing the map observed and the map simulation ; kappa simulation comparing the initial map, the map observed and the map simulation;
+* 
+* - fuzzy kappa, comparing the map observed and the map simulation but being more permissive by using fuzzy logic;
+* 
+* - fuzzy kappa simulation, comparing the map observed, the map simulation and the map initial but being more permissive by using fuzzy logic
+* 
+* For each comparator, two comparisons are made : one without taking into account the weights of an area, just computing with each area having the same 
+* importance, and an other using weights related to the area of the region
+* Tags: shapefile, comparison, statistic
+*/
 
 model mapcomparison
 
@@ -39,7 +49,7 @@ global {
 		loop i from: 0 to: (length(categories) * length(categories)) - 1 {
 			fuzzy_transitions[i,i] <- 1.0;	
 		}
-		list<float> similarity_per_agents <- [];
+		list<float> similarity_per_agents ;
 		write "kappa(map observed, map simulation, categories): " + kappa( areaclc collect (each.obs_cover),areaclc collect (each.sim_cover),categories);
 		write "kappa(map observed, map simulation,categories, weights): " + kappa( areaclc collect (each.obs_cover),areaclc collect (each.sim_cover),categories,areaclc collect (each.shape.area));
 		
@@ -101,7 +111,7 @@ experiment mapcomparison type: gui {
 		display map_init type: opengl{
 			species areaclc aspect: init refresh: false;
 		}
-		display map_fuzzy type: opengl{
+		display map_fuzzy type: opengl background: #pink{
 			species areaclc aspect: fuzzy_sim ;
 		}
 	}

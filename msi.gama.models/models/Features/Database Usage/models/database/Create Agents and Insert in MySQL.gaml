@@ -1,16 +1,21 @@
 /**
- *  create_agents_Insert_result_MySQL
- *  Author: bgaudou
- *  Description: This model illustrates the use of the MySQL DBMS to:
+* Name:  create_agents_Insert_result_MySQL
+* Author: Benoit Gaudou
+* Description: This model illustrates the use of the MySQL DBMS to: 
+* 
  *     - create agents from a database
+ * 
  *     - store every cycle some results into a database
+ * 
  * 
  *  Note: this model could be used with any DBMS just by changing the PARAMS variable.
  * 
+ * 
  *  NOTE: YOU SHOULD HAVE ALREADY CREATED YOUR DATABASE (meteo_DB here) AND IMPORTED THE FILE (../../includes/meteo_DB_dump.sql)
  *        IN ORDER THAT THE MODEL CAN RUN PROPERLY.
+* Tags: database
  */
-model create_agents_Insert_result_MySQL
+model create_agents_Insert_result_MySQL 
 
 global {
 	string res_DB <- '`result_DB`';
@@ -18,6 +23,8 @@ global {
 	string SQLquery_idPoint <- "SELECT `idPointgrille`, AVG(`RRmm`) AS RR, AVG(`Tmin`) AS Tmin, AVG(`Tmax`) AS Tmax, AVG(`Rglot`) AS Rglot, AVG(`ETPmm`) AS ETPmm
     			FROM meteo_table GROUP BY `idPointgrille`";
 	init {
+		write "This model will work only if the corresponding database is installed" color: #red;
+
 		create DB_accessor;
 		ask DB_accessor {
 			do executeUpdate params: PARAMS updateComm: "CREATE TABLE `result_DB` (
@@ -38,7 +45,7 @@ global {
 		}
 
 		write "DROP the result table";
-		do halt;
+		do pause; 
 	}
 
 }
@@ -72,7 +79,7 @@ species DB_accessor skills: [SQLSKILL] {
 		if (not (self testConnection [params::PARAMS])) {
 			write "Connection impossible";
 			ask (world) {
-				do halt;
+				do pause;
 			}
 
 		} else {

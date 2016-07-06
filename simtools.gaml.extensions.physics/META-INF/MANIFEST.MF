@@ -1,9 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Phisics
+Bundle-Name: Physics
 Bundle-SymbolicName: simtools.gaml.extensions.physics;singleton:=true
-Bundle-Version: 1.0.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-Version: 1.7.0.qualifier
 Require-Bundle: msi.gama.core;bundle-version="1.4.0",
  msi.gama.processor;bundle-version="1.4.0",
  msi.gama.ext;bundle-version="1.0.0"
@@ -12,3 +11,4 @@ Bundle-ClassPath: .,
 Export-Package: 
  simtools.gaml.extensions.physics
 Bundle-ActivationPolicy: lazy
+Eclipse-BundleShape: dir

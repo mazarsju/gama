@@ -4,8 +4,6 @@ package msi.gama.lang.gaml.gaml;
 
 import org.eclipse.emf.common.util.EList;
 
-import org.eclipse.emf.ecore.EObject;
-
 /**
  * <!-- begin-user-doc -->
  * A representation of the model object '<em><b>Block</b></em>'.
@@ -13,17 +11,17 @@ import org.eclipse.emf.ecore.EObject;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link msi.gama.lang.gaml.gaml.Block#getStatements <em>Statements</em>}</li>
  *   <li>{@link msi.gama.lang.gaml.gaml.Block#getFunction <em>Function</em>}</li>
  * </ul>
- * </p>
  *
  * @see msi.gama.lang.gaml.gaml.GamlPackage#getBlock()
  * @model
  * @generated
  */
-public interface Block extends EObject
+public interface Block extends Entry
 {
   /**
    * Returns the value of the '<em><b>Statements</b></em>' containment reference list.

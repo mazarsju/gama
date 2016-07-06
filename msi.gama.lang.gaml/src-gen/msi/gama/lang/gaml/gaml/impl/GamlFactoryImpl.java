@@ -66,10 +66,10 @@ public class GamlFactoryImpl extends EFactoryImpl implements GamlFactory
     {
       case GamlPackage.ENTRY: return createEntry();
       case GamlPackage.STRING_EVALUATOR: return createStringEvaluator();
-      case GamlPackage.ACTION_EDITOR: return createActionEditor();
       case GamlPackage.MODEL: return createModel();
       case GamlPackage.BLOCK: return createBlock();
       case GamlPackage.IMPORT: return createImport();
+      case GamlPackage.PRAGMA: return createPragma();
       case GamlPackage.STATEMENT: return createStatement();
       case GamlPackage.SGLOBAL: return createS_Global();
       case GamlPackage.SENTITIES: return createS_Entities();
@@ -89,7 +89,6 @@ public class GamlFactoryImpl extends EFactoryImpl implements GamlFactory
       case GamlPackage.SSET: return createS_Set();
       case GamlPackage.SEQUATIONS: return createS_Equations();
       case GamlPackage.SSOLVE: return createS_Solve();
-      case GamlPackage.SMONITOR: return createS_Monitor();
       case GamlPackage.SDISPLAY: return createS_Display();
       case GamlPackage.SPECIES_OR_GRID_DISPLAY_STATEMENT: return createspeciesOrGridDisplayStatement();
       case GamlPackage.PARAMETERS: return createParameters();
@@ -169,17 +168,6 @@ public class GamlFactoryImpl extends EFactoryImpl implements GamlFactory
    * <!-- end-user-doc -->
    * @generated
    */
-  public ActionEditor createActionEditor()
-  {
-    ActionEditorImpl actionEditor = new ActionEditorImpl();
-    return actionEditor;
-  }
-
-  /**
-   * <!-- begin-user-doc -->
-   * <!-- end-user-doc -->
-   * @generated
-   */
   public Model createModel()
   {
     ModelImpl model = new ModelImpl();
@@ -206,6 +194,17 @@ public class GamlFactoryImpl extends EFactoryImpl implements GamlFactory
   {
     ImportImpl import_ = new ImportImpl();
     return import_;
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  public Pragma createPragma()
+  {
+    PragmaImpl pragma = new PragmaImpl();
+    return pragma;
   }
 
   /**
@@ -415,17 +414,6 @@ public class GamlFactoryImpl extends EFactoryImpl implements GamlFactory
   {
     S_SolveImpl s_Solve = new S_SolveImpl();
     return s_Solve;
-  }
-
-  /**
-   * <!-- begin-user-doc -->
-   * <!-- end-user-doc -->
-   * @generated
-   */
-  public S_Monitor createS_Monitor()
-  {
-    S_MonitorImpl s_Monitor = new S_MonitorImpl();
-    return s_Monitor;
   }
 
   /**

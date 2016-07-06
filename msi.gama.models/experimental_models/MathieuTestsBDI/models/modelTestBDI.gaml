@@ -11,7 +11,7 @@ global {
 	init {
 		create fireArea number:100;
 		create waterArea number:1;
-		create helicopter number: 1;
+		create helicopter number: 2;
 	}
 	
 	reflex stop when: length(fireArea) = 0 {
@@ -32,7 +32,7 @@ species helicopter skills: [moving] control: simple_bdi{
 	//Definition of the variables featured in the BDI architecture.
 	float plan_persistence <- 1.0;
 	float intention_persistence <- 1.0;
-	bool probabilistic_choice <- true;
+	bool probabilistic_choice <- false;
 	
 	//Initialisation of the agent. At the begining, the agent just has the desire to patrol.
 	init {
@@ -55,15 +55,15 @@ species helicopter skills: [moving] control: simple_bdi{
 	
 	//The helicopter perceive the fires at a certain distance. It just record the location of the fire it obsrves. When it sees a fire, it stops it's intention of patroling.
 	perceive target:fireArea in: 10{
-		focus var:location agent:myself priority:5;
+		focus var:location /*agent:myself*/ priority:11;
 		ask myself{
 			do remove_intention(patrol_desire, true);
 		}
 	}
 	
 	//The rules are used to create a desire from a belief. We can specify the priority of the desire with a statement priority.
-	rule belief: new_predicate("location_fireArea") desire: get_belief_with_name("location_fireArea");
-	rule belief: no_water_predicate desire: water_predicate;
+	rule belief: new_predicate("location_fireArea") new_desire: get_belief_with_name("location_fireArea");
+	rule belief: no_water_predicate new_desire: water_predicate;
 	
 	//The plan to do when the intention is to patrol.
 	plan patrolling intention:patrol_desire finished_when: has_belief(new_predicate("location_fireArea")) or has_belief(no_water_predicate){

@@ -1,7 +1,10 @@
 /**
- *  model5
- *  This model illustrates 3D visualization
- */
+* Name: 3D visualization
+* Author:
+* Description: 5th part of the tutorial : Incremental Model
+* Tags: 3d, light
+*/
+
 model model5 
  
 global {
@@ -35,7 +38,7 @@ global {
 		}
 	}
 	reflex end_simulation when: infected_rate = 1.0 {
-		do halt;
+		do pause;
 	}
 }
 
@@ -93,7 +96,8 @@ experiment main_experiment type:gui{
 	output {
 		monitor "Current hour" value: current_hour;
 		monitor "Infected people rate" value: infected_rate;
-		display map_3D type: opengl ambient_light: is_night ? 30 : 120{
+		display map_3D type: opengl {
+			light 1 color:(is_night ? 50 : 255) update:true;
 			image "../includes/soil.jpg";
 			species road aspect:geom;
 			species people aspect:sphere3D;			

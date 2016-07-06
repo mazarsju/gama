@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Gama Modelling Language
 Bundle-Vendor: MSI
-Bundle-Version: 1.4.2
+Bundle-Version: 1.7.0.qualifier
 Bundle-SymbolicName: msi.gama.lang.gaml; singleton:=true
 Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.xtext.util,
@@ -12,21 +12,18 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.core.runtime,
  msi.gama.core,
  org.eclipse.core.resources,
- org.eclipse.xtext.generator,
- org.eclipse.emf.mwe2.launch;resolution:=optional,
  org.apache.commons.logging;resolution:=optional;visibility:=reexport,
  msi.gama.ext,
- org.eclipse.xtext.xbase.lib,
  msi.gama.processor,
- org.eclipse.xtext.ide
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+ org.eclipse.xtext.ide,
+ org.eclipse.xtext.generator;bundle-version="2.9.1";resolution:=optional
 Export-Package: msi.gama.lang.gaml,
  msi.gama.lang.gaml.formatting,
  msi.gama.lang.gaml.gaml,
  msi.gama.lang.gaml.gaml.impl,
  msi.gama.lang.gaml.gaml.util,
  msi.gama.lang.gaml.linking,
- msi.gama.lang.gaml.parser.antlr,
+ msi.gama.lang.gaml.parser.antlr, 
  msi.gama.lang.gaml.parser.antlr.internal,
  msi.gama.lang.gaml.parsing,
  msi.gama.lang.gaml.resource,
@@ -39,3 +36,4 @@ Export-Package: msi.gama.lang.gaml,
  msi.gama.lang.gaml.serializer
 Import-Package: org.apache.log4j;version="1.2.15"
 Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

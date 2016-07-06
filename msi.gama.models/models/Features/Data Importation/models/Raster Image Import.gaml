@@ -1,15 +1,18 @@
 /**
- *  HowToImportRaster
- *  Author: Maroussia Vavasseur and Benoit Gaudou
- *  Description: Importation of a raster image
- */
+* Name: Raster File in a Grid of cells
+* Author: Maroussia Vavasseur and Benoit Gaudou
+* Description: Model which shows how to import a Raster file in GAMA and use it to initialize the color attributes of a grid of cells. 
+* This model represents a grid with a cell, each cell has a color, and this color is used for animals (izards) to be placed on a cell 
+* that verifies some conditions. The izards do not move once they have been placed. 
+* Tags:  load_file, gis, raster
+*/
 
 model HowToImportRaster
 
 global {	
 	// Constants 
-	const heightImg type: int <- 5587;
-	const widthImg type: int <- 6201;	 
+	int heightImg const: true <- 5587;
+	int widthImg const: true <- 6201;	 
 	  
 	// Global variables
 	int factorDiscret <- 30 ;
@@ -32,14 +35,14 @@ global {
 }
  
 
-// We create izard agents and locate them on one'cell' among the list of cellules that verifies the following conditions : is empty ('empty(each.agents)') 
+// We create izard agents and locate them on one'cell' among the list of cellules in which there is no izard 
 // and with a color that is not white 'each.color != #white'
 // the shuffle operator is used to randomized the list of cells
 
 
 species izard {	
 	init{
-		location <- (shuffle(cell) first_with ((each.color != #white) and (empty(agents overlapping each)))).location ;
+		location <- (shuffle(cell) first_with ((each.color != #white) and (empty(izard inside each)))).location ;
 	}		
 	aspect default{
 		draw square(1) color: #orange;
@@ -58,14 +61,7 @@ grid cell  width: widthImg/factorDiscret height: heightImg/factorDiscret;
 
 
 
-experiment main type: gui {
-	// Parameters
-	parameter 'MNT file' var: mntImageRaster category: 'MNT' ;
-	parameter'Discretization factor' var: factorDiscret category:'Environment';
-	
-	parameter 'Nb of Izards' var: nbIzard category: 'Izard'; 
-	parameter 'Izard Shape' var: izardShape category: 'Izard';
-	
+experiment main type: gui {	
 	// We display:
 	// - the grid
 	// - the original MNT image as background

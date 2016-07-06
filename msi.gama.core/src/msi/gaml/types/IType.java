@@ -1,28 +1,33 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'IType.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.types;
 
 import java.util.Map;
-import msi.gama.common.interfaces.*;
+
+import msi.gama.common.interfaces.IGamlable;
+import msi.gama.common.interfaces.ITyped;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
-import msi.gaml.descriptions.*;
+import msi.gaml.descriptions.IDescription;
+import msi.gaml.descriptions.IGamlDescription;
+import msi.gaml.descriptions.OperatorProto;
+import msi.gaml.descriptions.SpeciesDescription;
 import msi.gaml.expressions.IExpression;
 
 /**
  * Written by drogoul Modified on 9 juin 2010
- * 
+ *
  * @todo Description
- * 
+ *
  */
 public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 
@@ -58,13 +63,17 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 	public static final int FONT = 19;
 	public static final int IMAGE = 20;
 	public final static int REGRESSION = 21;
+	public final static int SKILL = 22;
+	public final static int DATE = 23;
+	public final static int MESSAGE = 24;
+	public final static int MATERIAL = 25;
 	public final static int AVAILABLE_TYPES = 50;
 	public final static int SPECIES_TYPES = 100;
 
 	public Support cast(IScope scope, Object obj, Object param, boolean copy) throws GamaRuntimeException;
 
 	public Support cast(IScope scope, Object obj, Object param, IType keyType, IType contentType, boolean copy)
-		throws GamaRuntimeException;
+			throws GamaRuntimeException;
 
 	public int id();
 
@@ -76,7 +85,7 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 
 	public OperatorProto getGetter(String name);
 
-	// public Map<String, ? extends IGamlDescription> getFieldDescriptions(ModelDescription model);
+	public Map<String, OperatorProto> getFieldGetters();
 
 	public boolean isAgentType();
 
@@ -102,6 +111,7 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 
 	/**
 	 * returns the distance between two types
+	 * 
 	 * @param originalChildType
 	 * @return
 	 */
@@ -119,11 +129,12 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 	 */
 	boolean canBeTypeOf(IScope s, Object c);
 
-	public void init(int varKind, final int id, final String name, final Class ... supports);
+	public void init(int varKind, final int id, final String name, final Class... supports);
 
 	/**
-	 * Whether or not this type can be considered as having a contents. True for all containers and
-	 * special types (like rgb, species, etc.)
+	 * Whether or not this type can be considered as having a contents. True for
+	 * all containers and special types (like rgb, species, etc.)
+	 * 
 	 * @return
 	 */
 	// public abstract boolean hasContents();
@@ -132,12 +143,14 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 
 	/**
 	 * Whether or not this type can be used in add or remove statements
+	 * 
 	 * @return
 	 */
 	public abstract boolean isFixedLength();
 
 	/**
 	 * Tries to find a common supertype shared between this and the argument.
+	 * 
 	 * @param iType
 	 * @return
 	 */
@@ -149,9 +162,10 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 
 	/**
 	 * @param context
-	 *            When casting an expression, the type returned is usually that of this type. However, some types will
-	 *            compute
-	 *            another type based on the type of the expressoin to cast (for instance, species or agent)
+	 *            When casting an expression, the type returned is usually that
+	 *            of this type. However, some types will compute another type
+	 *            based on the type of the expressoin to cast (for instance,
+	 *            species or agent)
 	 * @param exp
 	 * @return
 	 */
@@ -172,9 +186,17 @@ public interface IType<Support> extends IGamlDescription, ITyped, IGamlable {
 	public String asPattern();
 
 	/**
-	 * @param context
-	 * @param toCast
+	 * @param plugin
+	 *            name
+	 */
+	public void setDefiningPlugin(String plugin);
+
+	public boolean isNumber();
+
+	/**
 	 * @return
 	 */
+	public boolean isDrawable();
 
+	public IType getWrappedType();
 }

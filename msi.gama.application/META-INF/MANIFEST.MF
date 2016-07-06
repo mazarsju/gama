@@ -1,41 +1,30 @@
 Manifest-Version: 1.0
 Bundle-ActivationPolicy: lazy
+Eclipse-BundleShape: dir
 Bundle-Name: GamaApplication
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Require-Bundle: org.eclipse.ui.console,
- msi.gama.core;bundle-version="1.0.0",
- org.eclipse.ui.navigator,
- org.eclipse.core.runtime,
+Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
- org.eclipse.jface.text,
- org.eclipse.ui,
- org.eclipse.ui.ide.application,
- org.eclipse.ui.ide,
- org.apache.commons.lang;bundle-version="2.6.0",
  org.eclipse.equinox.p2.core,
  org.eclipse.equinox.p2.engine,
  org.eclipse.equinox.p2.operations,
  org.eclipse.equinox.p2.metadata.repository,
- org.eclipse.ui.editors;bundle-version="3.8.0",
- msi.gama.processor;bundle-version="1.4.0",
- org.eclipse.ui.navigator.resources;bundle-version="3.4.400",
- msi.gama.ext;bundle-version="1.0.0"
+ org.eclipse.rcp;bundle-version="4.5.2",
+ org.eclipse.ui.ide.application,
+ org.eclipse.swt,
+ org.eclipse.core.expressions,
+ org.eclipse.core.filesystem;bundle-version="1.5.0",
+ org.eclipse.ui;bundle-version="3.107.0",
+ org.eclipse.ui.ide;bundle-version="3.11.0",
+ org.apache.commons.lang;bundle-version="2.6.0",
+ org.eclipse.e4.ui.workbench;bundle-version="1.3.1",
+ msi.gama.core;bundle-version="1.7.0"
 Bundle-Vendor: UMMISCO
 Bundle-Version: 1.7.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: msi.gama.application;singleton:=true
-Bundle-ClassPath: .,
- libs/gt-swt-11.4.jar,
- libs/svnkit-javahl.jar,
- libs/svnkit.jar
-Export-Package: msi.gama.gui.displays.awt,
- msi.gama.gui.displays.layers,
- msi.gama.gui.navigator,
- msi.gama.gui.parameters,
- msi.gama.gui.swt,
- msi.gama.gui.swt.commands,
- msi.gama.gui.swt.controls,
- msi.gama.gui.swt.perspectives,
- msi.gama.gui.swt.swing,
- msi.gama.gui.views,
- msi.gama.gui.views.actions
+Export-Package: msi.gama.application;uses:="org.eclipse.ui,org.eclipse.equinox.app",
+ msi.gama.application.projects,
+ msi.gama.application.workbench,
+ msi.gama.application.workspace
+Bundle-ClassPath: .
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

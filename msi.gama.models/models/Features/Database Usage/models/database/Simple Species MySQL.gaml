@@ -1,29 +1,47 @@
 /**
- *  Author: Truong Minh Thai (thai.truongminh@gmail.com)
- *  Description:
- *  This model illustrates the use of the AgentDB species (instead of the SQLSKILL), and in particular following actions:
+* Name:  Simple Species MySql
+* Author: Truong Minh Thai
+* Description:  This model illustrates the use of the AgentDB species (instead of the SQLSKILL), and in particular following actions:
+* 
  *    - testConection
+ * 
  *    - isConnected
+ * 
  *    - close 
+ * 
  *    - executeUpdate
+ * 
  *    - insert
+ * 
  *    - select
+ * 
  *    - getParameter 
+ * 
+ * 
  *  This model does SQl query commands:
- * 		- Create table 
- * 		- Insert data
- *      - Select data
- * 	    - Delete data
- *      - Drop table 
+ * 
+ * - Create table 
+ * 
+ * - Insert data
+ * 
+ * - Select data
+ * 
+ * - Delete data
+ * 
+ * - Drop table 
+ * 
  * 
  *  NOTE: YOU SHOULD HAVE ALREADY CREATED YOUR DATABASE (meteo_DB here) AND IMPORTED THE FILE (../../includes/meteo_DB_dump.sql)
  *        IN ORDER THAT THE MODEL CAN RUN PROPERLY.
+* Tags: database
  */
 model simpleSQL_DBSpecies_MySQL
 
 global {
 	map<string, string> PARAMS <- ['host'::'localhost', 'dbtype'::'MySQL', 'database'::'meteo_DB', 'port'::'8889', 'user'::'root', 'passwd'::'root'];
 	init {
+		write "This model will work only if the corresponding database is installed" color: #red;
+
 		create DB_Accessor number: 1 {
 			if (self testConnection (params::PARAMS) = false) {
 				write "Impossible connection";
@@ -40,7 +58,7 @@ global {
 				do close;
 			}
 
-			do halt;
+			do pause;
 		} else {
 			write "" + first(DB_Accessor) getParameter ();
 		}

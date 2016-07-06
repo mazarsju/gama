@@ -1,5 +1,11 @@
+/**
+* Name: Definition of charts
+* Author:
+* Description: 10th part of the tutorial: Predator Prey
+* Tags: chart
+*/
+
 model prey_predator
-//Model 10 of the predator/prey tutorial
 
 global {
 	int nb_preys_init <- 200;
@@ -26,7 +32,7 @@ global {
 	}
 	
 	reflex stop_simulation when: (nb_preys = 0) or (nb_predators = 0) {
-		do halt ;
+		do pause ;
 	} 
 }
 
@@ -39,13 +45,13 @@ species generic_species {
 	float proba_reproduce ;
 	float nb_max_offsprings;
 	float energy_reproduce;
-	file my_icon;
+	image_file my_icon;
 	vegetation_cell myCell <- one_of (vegetation_cell) ;
 	float energy <- (rnd(1000) / 1000) * max_energy  update: energy - energy_consum max: max_energy ;
 	
 	init {
 		location <- myCell.location;
-	}
+	} 
 		
 	reflex basic_move {
 			myCell <- choose_cell();
@@ -131,7 +137,7 @@ species predator parent: generic_species {
 	}
 }
 	
-grid vegetation_cell width: 50 height: 50 neighbours: 4 {
+grid vegetation_cell width: 50 height: 50 neighbors: 4 {
 	float maxFood <- 1.0 ;
 	float foodProd <- (rnd(1000) / 1000) * 0.01 ;
 	float food <- (rnd(1000) / 1000) max: maxFood update: food + foodProd ;

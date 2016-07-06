@@ -1,7 +1,9 @@
 /**
- *  model1
- *  This model illustrates how to create simple agent and make them move in their environment.
- */
+* Name: Charts
+* Author:
+* Description: Second part of the tutorial : Incremental Model
+* Tags: chart
+*/
 
 model SI_city
 
@@ -26,7 +28,7 @@ global{
 		}
 	}
 	reflex end_simulation when: infected_rate = 1.0 {
-		do halt;
+		do pause;
 	}
 }
 

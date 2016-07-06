@@ -1,68 +1,87 @@
 /**
  * Created by drogoul, 25 mars 2015
- * 
+ *
  */
 package ummisco.gama.opengl;
 
 import java.awt.Point;
-import java.awt.image.*;
-import java.io.*;
-import java.util.*;
-import javax.imageio.ImageIO;
-import msi.gama.common.interfaces.*;
-import msi.gama.common.util.*;
-import msi.gama.gui.displays.awt.DisplaySurfaceMenu;
-import msi.gama.gui.views.actions.DisplayedAgentsMenu;
-import msi.gama.metamodel.agent.IAgent;
-import msi.gama.metamodel.shape.*;
-import msi.gama.metamodel.topology.filter.Different;
-import msi.gama.outputs.*;
-import msi.gama.outputs.LayeredDisplayData.Changes;
-import msi.gama.outputs.display.LayerManager;
-import msi.gama.outputs.layers.ILayerMouseListener;
-import msi.gama.runtime.*;
-import msi.gama.runtime.exceptions.GamaRuntimeException;
-import msi.gaml.expressions.IExpression;
-import msi.gaml.operators.*;
-import org.eclipse.swt.events.*;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.*;
-import com.jogamp.opengl.*;
+import java.awt.image.BufferedImage;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MenuEvent;
+import org.eclipse.swt.events.MenuListener;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Menu;
+
+import com.jogamp.opengl.FPSCounter;
+import com.jogamp.opengl.GLAnimatorControl;
+import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.util.awt.AWTGLReadBufferUtil;
 import com.vividsolutions.jts.geom.Envelope;
 
+import msi.gama.common.interfaces.IDisplaySurface;
+import msi.gama.common.interfaces.IKeyword;
+import msi.gama.common.interfaces.ILayer;
+import msi.gama.common.interfaces.ILayerManager;
+import msi.gama.common.util.ImageUtils;
+import msi.gama.metamodel.agent.AgentIdentifier;
+import msi.gama.metamodel.agent.IAgent;
+import msi.gama.metamodel.shape.Envelope3D;
+import msi.gama.metamodel.shape.GamaPoint;
+import msi.gama.metamodel.shape.ILocation;
+import msi.gama.metamodel.shape.IShape;
+import msi.gama.metamodel.topology.filter.Different;
+import msi.gama.outputs.LayeredDisplayData;
+import msi.gama.outputs.LayeredDisplayData.Changes;
+import msi.gama.outputs.LayeredDisplayOutput;
+import msi.gama.outputs.display.LayerManager;
+import msi.gama.outputs.layers.IEventLayerListener;
+import msi.gama.outputs.layers.OverlayLayer;
+import msi.gama.runtime.GAMA;
+import msi.gama.runtime.IScope;
+import msi.gaml.expressions.IExpression;
+import msi.gaml.operators.Cast;
+import msi.gaml.statements.draw.DrawingAttributes;
+import ummisco.gama.ui.resources.IGamaIcons;
+import ummisco.gama.ui.utils.WorkbenchHelper;
+import ummisco.gama.ui.views.displays.DisplaySurfaceMenu;
+
 /**
  * Class OpenGLSWTDisplaySurface.
- * 
+ *
  * @author drogoul
  * @since 25 mars 2015
- * 
+ *
  */
 @msi.gama.precompiler.GamlAnnotations.display("opengl")
 public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	final GLAnimatorControl animator;
-	final JOGLRenderer renderer;
-	// protected volatile boolean canBeUpdated = true;
+	final Abstract3DRenderer renderer;
 	protected double zoomIncrement = 0.1;
-	protected Double zoomLevel = null;
 	protected boolean zoomFit = true;
-	private IZoomListener zoomListener;
-	Map<ILayerMouseListener, MouseListener> listeners = new HashMap();
+	Set<IEventLayerListener> listeners = new HashSet();
 	final LayeredDisplayOutput output;
-	final LayerManager manager;
+	final LayerManager layerManager;
 	protected DisplaySurfaceMenu menuManager;
 	protected IExpression temp_focus;
 	IScope scope;
 	final Composite parent;
-	private volatile boolean lockAcquired = false;
+	volatile boolean disposed;
+	private volatile boolean alreadyUpdating;
 
 	// NEVER USED
-	public SWTOpenGLDisplaySurface(final Object ... objects) {
-		// super((Composite) objects[0], SWT.None);
-		// data = null;
+	public SWTOpenGLDisplaySurface(final Object... objects) {
 		parent = null;
-		manager = null;
+		layerManager = null;
 		output = null;
 		animator = null;
 		renderer = null;
@@ -75,118 +94,122 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 	public SWTOpenGLDisplaySurface(final Composite parent, final LayeredDisplayOutput output) {
 		this.output = output;
 		this.parent = parent;
-		parent.setLayout(new GridLayout(1, false));
+		// parent.setLayout(new GridLayout(1, false));
 		output.getData().addListener(this);
 		output.setSurface(this);
-		manager = new LayerManager(this, output);
-		temp_focus = output.getFacet(IKeyword.FOCUS);
-		renderer = createRenderer();
+		setDisplayScope(output.getScope().copy("in OpenGLDisplaySuface"));
+		if (getOutput().useShader()) {
+			renderer = createModernRenderer();
+		}
+		else {
+			renderer = createJOGLRenderer();
+		}
 		animator = createAnimator();
+		animator.setUpdateFPSFrames(FPSCounter.DEFAULT_FRAMES_PER_INTERVAL, null);
+		layerManager = new LayerManager(this, output);
+		temp_focus = output.getFacet(IKeyword.FOCUS);
+
 		animator.start();
+	}
+
+	@Override
+	public void setMenuManager(final Object menuManager) {
+		this.menuManager = (DisplaySurfaceMenu) menuManager;
 	}
 
 	/**
 	 * Method getImage()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getImage()
 	 */
 	@Override
-	public BufferedImage getImage() {
-		GLAutoDrawable glad = renderer.getDrawable();
-		boolean current = glad.getGL().getContext().isCurrent();
-		if ( !current ) {
+	public BufferedImage getImage(final int w, final int h) {
+		while (renderer.getCurrentScene() == null || !renderer.getCurrentScene().rendered()) {
+			try {
+				Thread.sleep(20);
+			} catch (final InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		final GLAutoDrawable glad = renderer.getDrawable();
+		if (glad == null || glad.getGL() == null || glad.getGL().getContext() == null) {
+			return null;
+		}
+		final boolean current = glad.getGL().getContext().isCurrent();
+		if (!current) {
 			glad.getGL().getContext().makeCurrent();
 		}
-		AWTGLReadBufferUtil glReadBufferUtil = new AWTGLReadBufferUtil(glad.getGLProfile(), false);
-		BufferedImage image = glReadBufferUtil.readPixelsToBufferedImage(glad.getGL(), true);
-		if ( !current ) {
+		final AWTGLReadBufferUtil glReadBufferUtil = new AWTGLReadBufferUtil(glad.getGLProfile(), false);
+		final BufferedImage image = glReadBufferUtil.readPixelsToBufferedImage(glad.getGL(), true);
+		if (!current) {
 			glad.getGL().getContext().release();
 		}
-		return image;
+		return ImageUtils.resize(image, w, h);
 	}
 
 	/**
 	 * Method updateDisplay()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#updateDisplay(boolean)
 	 */
 	@Override
 	public void updateDisplay(final boolean force) {
 
-		// acquireLock();
-		boolean oldState = animator.isPaused();
-		if ( force ) {
-			animator.resume();
+		if (alreadyUpdating) {
+			return;
 		}
-		// canBeUpdated(false);
 		try {
-			if ( output.getData().isAutosave() ) {
-				snapshot();
+			alreadyUpdating = true;
+
+			final boolean oldState = animator.isPaused();
+			if (force) {
+				animator.resume();
 			}
-			manager.drawLayersOn(renderer);
+			layerManager.drawLayersOn(renderer);
+
+			// EXPERIMENTAL
+
+			if (temp_focus != null) {
+				final IShape geometry = Cast.asGeometry(getDisplayScope(), temp_focus.value(getDisplayScope()));
+				if (geometry != null) {
+					temp_focus = null;
+					focusOn(geometry);
+				}
+			}
+			if (force) {
+				if (oldState) {
+					animator.pause();
+				}
+			}
 		} finally {
-			// releaseLock();
+			alreadyUpdating = false;
 		}
-
-		// EXPERIMENTAL
-
-		if ( temp_focus != null ) {
-			IShape geometry = Cast.asGeometry(getDisplayScope(), temp_focus.value(getDisplayScope()));
-			if ( geometry != null ) {
-				temp_focus = null;
-				focusOn(geometry);
-			}
-		}
-		if ( force ) {
-			if ( oldState ) {
-				animator.pause();
-			}
-		}
-
 	}
 
 	/**
 	 * Method resizeImage()
-	 * @see msi.gama.common.interfaces.IDisplaySurface#resizeImage(int, int, boolean)
+	 * 
+	 * @see msi.gama.common.interfaces.IDisplaySurface#resizeImage(int, int,
+	 *      boolean)
 	 */
 	@Override
 	public boolean resizeImage(final int x, final int y, final boolean force) {
-		// if ( !force && x == viewPort.width && y == viewPort.height ) { return true; }
-		// // if ( getWidth() <= 0 && getHeight() <= 0 ) { return false; }
-		// canBeUpdated(false);
-		// final int[] point = new int[2];
-		// if ( !manager.stayProportional() ) {
-		// point[0] = x;
-		// point[1] = y;
-		// } else {
-		// double widthHeightConstraint = getEnvHeight() / getEnvWidth();
-		// if ( widthHeightConstraint < 1 ) {
-		// point[1] = Math.min(y, (int) Math.round(x * widthHeightConstraint));
-		// point[0] = Math.min(x, (int) Math.round(point[1] / widthHeightConstraint));
-		// } else {
-		// point[0] = Math.min(x, (int) Math.round(y / widthHeightConstraint));
-		// point[1] = Math.min(y, (int) Math.round(point[0] * widthHeightConstraint));
-		// }
-		// }
-		// viewPort.height = Math.max(1, point[1]);;
-		// viewPort.width = Math.max(1, point[0]);;
-		// canBeUpdated(true);
-		// setSize(x, y);
 		return true;
 	}
 
 	@Override
-	public int getDisplayWidth() {
-		return renderer.getCanvas().getSurfaceWidth();
-		// return viewPort.width;
+	public double getDisplayWidth() {
+		return renderer.getCanvas().getSurfaceWidth() * getZoomLevel();
 	}
 
 	@Override
-	public int getDisplayHeight() {
-		return renderer.getCanvas().getSurfaceHeight();
-		// return viewPort.height;
+	public double getDisplayHeight() {
+		return renderer.getCanvas().getSurfaceHeight() * getZoomLevel();
 	}
 
 	/**
 	 * Method zoomIn()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#zoomIn()
 	 */
 	@Override
@@ -196,6 +219,7 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method zoomOut()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#zoomOut()
 	 */
 	@Override
@@ -205,190 +229,129 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method zoomFit()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#zoomFit()
 	 */
 	@Override
 	public void zoomFit() {
-		// resizeImage(getWidth(), getHeight(), false);
-		renderer.frame = 0;
-		renderer.camera.zeroVelocity();
-		renderer.camera.resetCamera(getEnvWidth(), getEnvHeight(), output.getData().isOutput3D());
-		newZoomLevel(1d);
+		renderer.currentZRotation = 0;
+		renderer.camera.reset();
+		output.getData().setZoomLevel(1d);
 		zoomFit = true;
 
 	}
 
 	/**
 	 * Method getManager()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getManager()
 	 */
 	@Override
 	public ILayerManager getManager() {
-		return manager;
+		return layerManager;
 	}
 
 	/**
 	 * Method focusOn()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#focusOn(msi.gama.metamodel.shape.IShape)
 	 */
 	@Override
 	public void focusOn(final IShape geometry) {
 		// FIXME: Need to compute the depth of the shape to adjust ZPos value.
-		// FIXME: Problem when the geometry is a point how to determine the maxExtent of the shape?
-		// FIXME: Problem when an agent is placed on a layer with a z_value how to get this z_layer value to offset it?
-		ILocation p = geometry.getLocation();
-		renderer.camera.zoomFocus(p.getX(), p.getY(), p.getZ(), geometry.getEnvelope().maxExtent());
+		// FIXME: Problem when the geometry is a point how to determine the
+		// maxExtent of the shape?
+		// FIXME: Problem when an agent is placed on a layer with a z_value how
+		// to get this z_layer value to offset it?
+		renderer.camera.zoomFocus(geometry);
 	}
 
 	/**
 	 * Method waitForUpdateAndRun()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#waitForUpdateAndRun(java.lang.Runnable)
 	 */
 	@Override
 	public void runAndUpdate(final Runnable r) {
 		r.run();
-		if ( GAMA.isPaused() ) {
+		if (getDisplayScope().isPaused()) {
 			updateDisplay(true);
 		}
-		if ( animator.isPaused() ) {
+		if (animator.isPaused()) {
 			animator.resume();
 			animator.pause();
 		}
 	}
 
-	public final void save(final IScope scope, final RenderedImage image) {
-		// Intentionnaly passing GAMA.getRuntimeScope() to errors in order to prevent the exceptions from being masked.
-		if ( image == null ) { return; }
-		try {
-			Files.newFolder(scope, SNAPSHOT_FOLDER_NAME);
-		} catch (GamaRuntimeException e1) {
-			e1.addContext("Impossible to create folder " + SNAPSHOT_FOLDER_NAME);
-			GAMA.reportError(GAMA.getRuntimeScope(), e1, false);
-			e1.printStackTrace();
-			return;
-		}
-		String snapshotFile =
-			FileUtils.constructAbsoluteFilePath(scope, SNAPSHOT_FOLDER_NAME + "/" + GAMA.getModel().getName() +
-				"_display_" + output.getName(), false);
-
-		String file =
-			snapshotFile + "_size_" + image.getWidth() + "x" + image.getHeight() + "_cycle_" +
-				scope.getClock().getCycle() + "_time_" + java.lang.System.currentTimeMillis() + ".png";
-		DataOutputStream os = null;
-		try {
-			os = new DataOutputStream(new FileOutputStream(file));
-			ImageIO.write(image, "png", os);
-		} catch (java.io.IOException ex) {
-			GamaRuntimeException e = GamaRuntimeException.create(ex, scope);
-			e.addContext("Unable to create output stream for snapshot image");
-			GAMA.reportError(GAMA.getRuntimeScope(), e, false);
-		} finally {
-			try {
-				if ( os != null ) {
-					os.close();
-				}
-			} catch (Exception ex) {
-				GamaRuntimeException e = GamaRuntimeException.create(ex, scope);
-				e.addContext("Unable to close output stream for snapshot image");
-				GAMA.reportError(GAMA.getRuntimeScope(), e, false);
-			}
-		}
-	}
-
-	/**
-	 * Method snapshot()
-	 * @see msi.gama.common.interfaces.IDisplaySurface#snapshot()
-	 */
-	@Override
-	public void snapshot() {
-		save(getDisplayScope(), getImage());
-	}
-
 	/**
 	 * Method getWidth()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getWidth()
 	 */
 	@Override
 	public int getWidth() {
-		return 0;
+		return renderer.getDrawable().getSurfaceWidth();
 		// return size.x;
 	}
 
 	/**
 	 * Method getHeight()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getHeight()
 	 */
 	@Override
 	public int getHeight() {
-		return 0;
+		return renderer.getDrawable().getSurfaceHeight();
 		// return size.y;
 	}
 
 	/**
 	 * Method outputReloaded()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#outputReloaded()
 	 */
 	@Override
 	public void outputReloaded() {
-		setDisplayScope(output.getScope().copy());
+		setDisplayScope(output.getScope().copy("in OpenGLDisplaySurface"));
 		getDisplayScope().disableErrorReporting();
-		renderer.initFor(this);
-		manager.outputChanged();
+		renderer.initScene();
+		layerManager.outputChanged();
 
 		// resizeImage(getWidth(), getHeight(), true);
-		if ( zoomFit ) {
+		if (zoomFit) {
 			zoomFit();
 		}
 	}
 
 	/**
 	 * Method addMouseListener()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#addMouseListener(java.awt.event.MouseListener)
 	 */
 	@Override
-	public void addMouseListener(final ILayerMouseListener listener) {
-
-		if ( listeners.containsKey(listener) ) { return; }
-		MouseListener l = new MouseAdapter() {
-
-			int down_x, down_y;
-
-			@Override
-			public void mouseDown(final MouseEvent e) {
-				down_x = e.x;
-				down_y = e.y;
-				listener.mouseDown(e.x, e.y, e.button);
-			}
-
-			@Override
-			public void mouseUp(final MouseEvent e) {
-				if ( e.x == down_x && e.y == down_y ) {
-					listener.mouseClicked(e.x, e.y, e.button);
-				} else {
-					listener.mouseUp(e.x, e.y, e.button);
-				}
-			}
-
-		};
-		listeners.put(listener, l);
-		renderer.canvas.addMouseListener(l);
-
+	public void addListener(final IEventLayerListener listener) {
+		listeners.add(listener);
 	}
 
 	/**
 	 * Method removeMouseListener()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#removeMouseListener(java.awt.event.MouseListener)
 	 */
 	@Override
-	public void removeMouseListener(final ILayerMouseListener listener) {
-		MouseListener l = listeners.get(listener);
-		if ( l == null ) { return; }
+	public void removeListener(final IEventLayerListener listener) {
 		listeners.remove(listener);
-		renderer.canvas.removeMouseListener(l);
+
+	}
+
+	@Override
+	public Collection<IEventLayerListener> getLayerListeners() {
+		return listeners;
 	}
 
 	/**
 	 * Method getEnvWidth()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getEnvWidth()
 	 */
 	@Override
@@ -398,6 +361,7 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method getEnvHeight()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getEnvHeight()
 	 */
 	@Override
@@ -406,64 +370,90 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 	}
 
 	/**
-	 * Method setZoomListener()
-	 * @see msi.gama.common.interfaces.IDisplaySurface#setZoomListener(msi.gama.common.interfaces.IDisplaySurface.IZoomListener)
-	 */
-	@Override
-	public void setZoomListener(final IZoomListener listener) {
-		zoomListener = listener;
-	}
-
-	/**
 	 * Method getModelCoordinates()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getModelCoordinates()
 	 */
 	@Override
 	public ILocation getModelCoordinates() {
-		Point mp = renderer.camera.getMousePosition();
-		if ( mp == null ) { return null; }
-		GamaPoint p = renderer.getRealWorldPointFromWindowPoint(mp);
-		if ( p == null ) { return null; }
+		final Point mp = renderer.camera.getMousePosition();
+		if (mp == null) {
+			return null;
+		}
+		final GamaPoint p = renderer.getRealWorldPointFromWindowPoint(mp);
+		if (p == null) {
+			return null;
+		}
 		return new GamaPoint(p.x, -p.y);
+	}
+
+	@Override
+	public String getModelCoordinatesInfo() {
+		boolean canObtainInfo = getManager().isProvidingCoordinates();
+		if (!canObtainInfo) {
+			return "No world coordinates";
+		}
+		canObtainInfo = getManager().isProvidingWorldCoordinates();
+		if (!canObtainInfo) {
+			return "No world coordinates";
+		}
+		// By default, returns the coordinates in the world.
+		final ILocation point = getModelCoordinates();
+		final String x = point == null ? "N/A" : String.format("%8.2f", point.getX());
+		final String y = point == null ? "N/A" : String.format("%8.2f", point.getY());
+		final Object[] objects = new Object[] { x, y };
+		return String.format("X%10s | Y%10s", objects);
+	}
+
+	@Override
+	public Envelope getVisibleRegionForLayer(final ILayer currentLayer) {
+		if (currentLayer instanceof OverlayLayer) {
+			return getDisplayScope().getSimulationScope().getEnvelope();
+		}
+		Envelope e = currentLayer.getVisibleRegion();
+		if (e == null) {
+			e = new Envelope();
+			final Point origin = new Point(0, 0);
+			int xc = -origin.x;
+			int yc = -origin.y;
+			e.expandToInclude((GamaPoint) currentLayer.getModelCoordinatesFrom(xc, yc, this));
+			xc = xc + renderer.getDrawable().getSurfaceWidth();
+			yc = yc + renderer.getDrawable().getSurfaceHeight();
+			e.expandToInclude((GamaPoint) currentLayer.getModelCoordinatesFrom(xc, yc, this));
+			currentLayer.setVisibleRegion(e);
+		}
+		return e;
 	}
 
 	/**
 	 * Method getModelCoordinatesFrom()
-	 * @see msi.gama.common.interfaces.IDisplaySurface#getModelCoordinatesFrom(int, int, java.awt.Point, java.awt.Point)
+	 * 
+	 * @see msi.gama.common.interfaces.IDisplaySurface#getModelCoordinatesFrom(int,
+	 *      int, java.awt.Point, java.awt.Point)
 	 */
 	@Override
 	public ILocation getModelCoordinatesFrom(final int xOnScreen, final int yOnScreen, final Point sizeInPixels,
-		final Point positionInPixels) {
-		Point mp = new Point(xOnScreen, yOnScreen);
-		GamaPoint p = renderer.getRealWorldPointFromWindowPoint(mp);
+			final Point positionInPixels) {
+		final Point mp = new Point(xOnScreen, yOnScreen);
+		final GamaPoint p = renderer.getRealWorldPointFromWindowPoint(mp);
 		return new GamaPoint(p.x, -p.y);
 	}
 
 	/**
 	 * Method selectAgent()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#selectAgent(int, int)
 	 */
 	@Override
 	public Collection<IAgent> selectAgent(final int x, final int y) {
 		final ILocation pp = getModelCoordinatesFrom(x, y, null, null);
-		Set<IAgent> agents = null;
-		IScope s = GAMA.obtainNewScope();
-		try {
-			agents =
-				(Set<IAgent>) GAMA
-					.getSimulation()
-					.getPopulation()
-					.getTopology()
-					.getNeighboursOf(s, new GamaPoint(pp.getX(), pp.getY()), renderer.getMaxEnvDim() / 100,
-						Different.with());
-		} finally {
-			GAMA.releaseScope(s);
-		}
-		return agents;
+		return scope.getRoot().getTopology().getNeighborsOf(scope, new GamaPoint(pp.getX(), pp.getY()),
+				renderer.getMaxEnvDim() / 100, Different.with());
 	}
 
 	/**
 	 * Method followAgent()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#followAgent(msi.gama.metamodel.agent.IAgent)
 	 */
 	@Override
@@ -472,13 +462,11 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 			@Override
 			public void run() {
-				GuiUtils.asyncRun(new Runnable() {
+				WorkbenchHelper.asyncRun(new Runnable() {
 
 					@Override
 					public void run() {
-						ILocation l = a.getGeometry().getLocation();
-						Envelope env = a.getGeometry().getEnvelope();
-						renderer.camera.zoomFocus(l.getX(), l.getY(), l.getZ(), env.maxExtent());
+						renderer.camera.zoomFocus(a);
 					}
 				});
 			}
@@ -488,23 +476,27 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method getZoomLevel()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getZoomLevel()
 	 */
 	@Override
 	public double getZoomLevel() {
-		if ( zoomLevel == null ) {
-			zoomLevel = computeInitialZoomLevel();
+		if (output.getData().getZoomLevel() == null) {
+			output.getData().setZoomLevel(computeInitialZoomLevel());
 		}
-		return zoomLevel;
+		return output.getData().getZoomLevel();
 	}
 
 	protected Double computeInitialZoomLevel() {
-		if ( renderer.camera == null ) { return 1.0; }
+		if (renderer.camera == null) {
+			return 1.0;
+		}
 		return renderer.camera.zoomLevel();
 	}
 
 	/**
 	 * Method getDisplayScope()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getDisplayScope()
 	 */
 	@Override
@@ -514,107 +506,150 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method getOutput()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#getOutput()
 	 */
 	@Override
-	public IDisplayOutput getOutput() {
+	public LayeredDisplayOutput getOutput() {
 		return output;
 	}
 
 	/**
 	 * Method getCameraPosition()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface.OpenGL#getCameraPosition()
 	 */
 	@Override
 	public ILocation getCameraPosition() {
-		if ( renderer.camera == null ) { return new GamaPoint(0, 0, 0); }
+		if (renderer.camera == null) {
+			return new GamaPoint(0, 0, 0);
+		}
 		return renderer.camera.getPosition();
 	}
 
 	/**
 	 * Method setPaused()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface.OpenGL#setPaused(boolean)
 	 */
 	@Override
 	public void setPaused(final boolean paused) {
-		if ( paused ) {
+		if (paused) {
 			animator.pause();
 		} else {
 			animator.resume();
 		}
 	}
 
+	final Runnable cleanup = new Runnable() {
+
+		@Override
+		public void run() {
+			WorkbenchHelper.asyncRun(new Runnable() {
+
+				@Override
+				public void run() {
+					renderer.getPickingState().setPicking(false);
+
+				}
+			});
+
+		}
+
+	};
+
 	/**
 	 * Method selectAgents()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface.OpenGL#selectAgents(msi.gama.metamodel.agent.IAgent)
 	 */
 	@Override
-	public void selectAgent(final IAgent agent) {
-		menuManager.buildMenu(renderer.camera.getMousePosition().x, renderer.camera.getMousePosition().y, agent);
+	public void selectAgent(final DrawingAttributes attributes) {
+		IAgent ag = null;
+		if (attributes != null)
+			if (attributes.getSpeciesName() != null) {
+				// The picked image is a grid or an image of a grid
+				final GamaPoint pickedPoint = renderer
+						.getIntWorldPointFromWindowPoint(renderer.camera.getLastMousePressedPosition());
+				ag = scope.getRoot().getPopulationFor(attributes.getSpeciesName()).getAgent(scope,
+						new GamaPoint(pickedPoint.x, -pickedPoint.y));
+			} else {
+				final AgentIdentifier id = attributes.getAgentIdentifier();
+				if (id != null)
+					ag = id.getAgent(scope);
+			}
+		menuManager.buildMenu(renderer.camera.getMousePosition().x, renderer.camera.getMousePosition().y, ag, cleanup);
 	}
 
-	/**
-	 * Method newZoomLevel()
-	 * @see msi.gama.common.interfaces.IDisplaySurface.IZoomListener#newZoomLevel(double)
-	 */
-	@Override
-	public void newZoomLevel(final double newZoomLevel) {
-		zoomLevel = newZoomLevel;
-		if ( zoomListener != null ) {
-			zoomListener.newZoomLevel(zoomLevel);
-		}
-		// animator.getRenderer().initFor(this);
-	}
-
-	org.eclipse.swt.widgets.Menu menu;
+	// org.eclipse.swt.widgets.Menu menu;
 
 	/**
 	 * Method selectSeveralAgents()
-	 * @see msi.gama.common.interfaces.IDisplaySurface.OpenGL#selectSeveralAgents(java.util.Collection, int)
+	 * 
+	 * @see msi.gama.common.interfaces.IDisplaySurface.OpenGL#selectSeveralAgents(java.util.Collection,
+	 *      int)
 	 */
 	@Override
-	public void selectSeveralAgents(final Collection<IAgent> agents) {
+	public void selectionIn(final Envelope3D env) {
 
-		// animator.pause();
-		GuiUtils.asyncRun(new Runnable() {
+		final Envelope3D envInWorld = Envelope3D.withYNegated(env);
+		final Collection<IAgent> agents = scope.getTopology().getSpatialIndex().allInEnvelope(scope,
+				envInWorld.centre(), envInWorld, new Different(), false);
+		final Map<String, Runnable> actions = new LinkedHashMap();
+		final Map<String, Image> images = new HashMap();
+		images.put(renderer.camera.isROISticky() ? "Hide region" : "Keep region visible",
+				IGamaIcons.MENU_FOLLOW.image());
+		images.put("Focus on region", IGamaIcons.DISPLAY_TOOLBAR_ZOOMFIT.image());
+		actions.put(renderer.camera.isROISticky() ? "Hide region" : "Keep region visible", new Runnable() {
 
 			@Override
 			public void run() {
-				if ( menu != null && !menu.isDisposed() ) {
-					menu.dispose();
-				}
-				Control swtControl = renderer.getCanvas();
-				DisplayedAgentsMenu menuBuilder = new DisplayedAgentsMenu();
-				menu =
-					menuBuilder.getMenu(SWTOpenGLDisplaySurface.this, swtControl, true, true, agents,
-						getModelCoordinates(), true);
-				menu.setData(IKeyword.USER_LOCATION, getModelCoordinates());
-				menu.setLocation(swtControl.toDisplay(renderer.camera.getMousePosition().x,
-					renderer.camera.getMousePosition().y));
-				// menu.addMenuListener(new MenuListener() {
-				//
-				// @Override
-				// public void menuHidden(final MenuEvent e) {
-				// // animator.resume();
-				// }
-				//
-				// @Override
-				// public void menuShown(final MenuEvent e) {
-				// // animator.pause();
-				// }
-				// });
-				menu.setVisible(true);
+				renderer.camera.toggleStickyROI();
+			}
+		});
+		actions.put("Focus on region", new Runnable() {
 
-				// AD 3/10/13: Fix for Issue 669 on Linux GTK setup. See :
-				// http://www.eclipse.org/forums/index.php/t/208284/
-				// retryVisible(menu, MAX_RETRIES);
+			@Override
+			public void run() {
+				renderer.camera.zoomRoi(env);
+			}
+		});
+		WorkbenchHelper.run(new Runnable() {
+
+			@Override
+			public void run() {
+				final Menu menu = menuManager.buildROIMenu(renderer.camera.getMousePosition().x,
+						renderer.camera.getMousePosition().y, agents, getModelCoordinates(), actions, images);
+				menu.addMenuListener(new MenuListener() {
+
+					@Override
+					public void menuHidden(final MenuEvent e) {
+						animator.resume();
+						// Will be run after the selection
+						WorkbenchHelper.asyncRun(new Runnable() {
+
+							@Override
+							public void run() {
+								renderer.cancelROI();
+							}
+						});
+
+					}
+
+					@Override
+					public void menuShown(final MenuEvent e) {
+						animator.pause();
+					}
+				});
+
+				menu.setVisible(true);
 			}
 		});
 
 	}
 
 	protected void setDisplayScope(final IScope scope) {
-		if ( this.scope != null ) {
+		if (this.scope != null) {
 			GAMA.releaseScope(this.scope);
 		}
 		this.scope = scope;
@@ -622,13 +657,24 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	@Override
 	public void dispose() {
-		if ( isDisposed() ) { return; }
-		if ( manager != null ) {
-			manager.dispose();
+		if (disposed) {
+			return;
 		}
-		if ( animator != null && animator.isStarted() ) {
+		disposed = true;
+		if (layerManager != null) {
+			layerManager.dispose();
+		}
+		if (animator != null && animator.isStarted()) {
 			animator.stop();
 		}
+		// if (this.menu != null && !menu.isDisposed()) {
+		// menu.dispose();
+		// this.menu = null;
+		// }
+
+		this.menuManager = null;
+		this.listeners.clear();
+
 		GAMA.releaseScope(getDisplayScope());
 		setDisplayScope(null);
 	}
@@ -640,38 +686,40 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method changed()
-	 * @see msi.gama.outputs.LayeredDisplayData.DisplayDataListener#changed(int, boolean)
+	 * 
+	 * @see msi.gama.outputs.LayeredDisplayData.DisplayDataListener#changed(int,
+	 *      boolean)
 	 */
 	@Override
 	public void changed(final Changes property, final boolean value) {
 		switch (property) {
-			case CHANGE_CAMERA:
-				renderer.switchCamera();
-				break;
-			case SPLIT_LAYER:
-				final int nbLayers = this.getManager().getItems().size();
-				int i = 0;
-				final Iterator<ILayer> it = this.getManager().getItems().iterator();
-				while (it.hasNext()) {
-					final ILayer curLayer = it.next();
-					if ( value ) {// Split layer
-						curLayer.setElevation((double) i / nbLayers);
-					} else {// put all the layer at zero
-						curLayer.setElevation(0.0);
-					}
-					i++;
+		case CHANGE_CAMERA:
+			renderer.switchCamera();
+			break;
+		case SPLIT_LAYER:
+			final int nbLayers = this.getManager().getItems().size();
+			int i = 0;
+			final Iterator<ILayer> it = this.getManager().getItems().iterator();
+			while (it.hasNext()) {
+				final ILayer curLayer = it.next();
+				if (value) {// Split layer
+					curLayer.setElevation((double) i / nbLayers);
+				} else {// put all the layer at zero
+					curLayer.setElevation(0.0);
 				}
+				i++;
+			}
 
-				updateDisplay(true);
-				break;
-			case THREED_VIEW:
-				// FIXME What is this ???
-				break;
-			case CAMERA_POS:
-				renderer.updateCameraPosition();
-				break;
-			default:
-				break;
+			updateDisplay(true);
+			break;
+		case THREED_VIEW:
+			// FIXME What is this ???
+			break;
+		case CAMERA_POS:
+			renderer.updateCameraPosition();
+			break;
+		default:
+			break;
 
 		}
 
@@ -679,20 +727,12 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	/**
 	 * Method setSize()
+	 * 
 	 * @see msi.gama.common.interfaces.IDisplaySurface#setSize(int, int)
 	 */
 	@Override
 	public void setSize(final int x, final int y) {
 		// size = new Point(x, y);
-	}
-
-	/**
-	 * Method isDisposed()
-	 * @see msi.gama.common.interfaces.IDisplaySurface#isDisposed()
-	 */
-	@Override
-	public boolean isDisposed() {
-		return false;
 	}
 
 	/**
@@ -702,21 +742,16 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 		return parent;
 	}
 
-	/**
-	 * Method setSWTMenuManager()
-	 * @see msi.gama.common.interfaces.IDisplaySurface#setSWTMenuManager(java.lang.Object)
-	 */
-	@Override
-	public void setSWTMenuManager(final Object displaySurfaceMenu) {
-		menuManager = (DisplaySurfaceMenu) displaySurfaceMenu;
-	}
-
-	private JOGLRenderer createRenderer() {
+	private JOGLRenderer createJOGLRenderer() {
 		return new JOGLRenderer(this);
+	}
+	
+	private ModernRenderer createModernRenderer() {
+		return new ModernRenderer(this);
 	}
 
 	private GLAnimatorControl createAnimator() {
-		GLAutoDrawable drawable = renderer.createDrawable(parent);
+		final GLAutoDrawable drawable = renderer.createDrawable(parent);
 		return drawable.getAnimator();
 	}
 
@@ -726,22 +761,102 @@ public class SWTOpenGLDisplaySurface implements IDisplaySurface.OpenGL {
 
 	}
 
-	@Override
-	public synchronized void acquireLock() {
-		while (lockAcquired) {
-			try {
-				wait();
-			} catch (final InterruptedException e) {
-				// e.printStackTrace();
-			}
+	public void invalidateVisibleRegions() {
+		for (final ILayer layer : layerManager.getItems()) {
+			layer.setVisibleRegion(null);
 		}
-		lockAcquired = true;
+	}
+
+	/**
+	 * Method getFPS()
+	 * 
+	 * @see msi.gama.common.interfaces.IDisplaySurface#getFPS()
+	 */
+	@Override
+	public int getFPS() {
+		return (int) this.animator.getTotalFPS();
 	}
 
 	@Override
-	public synchronized void releaseLock() {
-		lockAcquired = false;
-		notify();
+	public boolean isRealized() {
+		if (renderer == null) {
+			return false;
+		}
+		final GLAutoDrawable d = renderer.getDrawable();
+		if (d == null) {
+			return false;
+		}
+		return d.isRealized();
+	}
+
+	@Override
+	public boolean isRendered() {
+		if (renderer == null || renderer.sceneBuffer == null || renderer.sceneBuffer.getSceneToRender() == null)
+			return false;
+		return renderer.sceneBuffer.getSceneToRender().rendered();
+	}
+
+	@Override
+	public boolean isDisposed() {
+		return disposed;
+	}
+
+	@Override
+	public Envelope3D getROIDimensions() {
+		return renderer.getROIEnvelope();
+	}
+
+	@Override
+	public void dispatchKeyEvent(final char e) {
+		for (final IEventLayerListener gl : listeners) {
+			gl.keyPressed(String.valueOf(e));
+		}
+	}
+
+	@Override
+	public void dispatchMouseEvent(final int swtMouseEvent) {
+		final Point p = renderer.camera.getMousePosition();
+		final int x = p.x;
+		final int y = p.y;
+		for (final IEventLayerListener gl : listeners)
+			switch (swtMouseEvent) {
+			case SWT.MouseDown:
+				gl.mouseDown(x, y, 1);
+				break;
+			case SWT.MouseUp:
+				gl.mouseUp(x, y, 1);
+				break;
+			case SWT.MouseMove:
+				gl.mouseMove(x, y);
+				break;
+			case SWT.MouseEnter:
+				gl.mouseEnter(x, y);
+				break;
+			case SWT.MouseExit:
+				gl.mouseExit(x, y);
+				break;
+			}
+	}
+
+	@Override
+	public void setMousePosition(final int x, final int y) {
+		// Nothing to do (taken in charge by the camera)
+
+	}
+
+	@Override
+	public void selectAgentsAroundMouse() {
+		final Point position = renderer.camera.getLastMousePressedPosition();
+		if (renderer.mouseInROI(position)) {
+			renderer.getSurface().selectionIn(renderer.getROIEnvelope());
+		} else
+			renderer.getPickingState().setPicking(true);
+	}
+
+	@Override
+	public void draggedTo(final int x, final int y) {
+		// Nothing to do (taken in charge by the camera
+
 	}
 
 }

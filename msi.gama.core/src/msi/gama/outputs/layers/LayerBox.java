@@ -1,28 +1,29 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'LayerBox.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gama.outputs.layers;
 
 import msi.gama.metamodel.shape.*;
-import msi.gama.runtime.*;
+import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gaml.expressions.*;
 import msi.gaml.operators.Cast;
+import msi.gaml.operators.fastmaths.FastMath;
 import msi.gaml.types.IType;
 
 /**
  * Written by drogoul Modified on 16 nov. 2010
- * 
+ *
  * @todo Description
- * 
+ *
  */
 public class LayerBox implements IDisplayLayerBox {
 
@@ -54,7 +55,7 @@ public class LayerBox implements IDisplayLayerBox {
 
 	public LayerBox(final IExpression transp, final IExpression pos, final IExpression ext, final IExpression refr,
 		final IExpression tr, final IExpression fd, final IExpression sl) throws GamaRuntimeException {
-		IScope scope = GAMA.obtainNewScope();
+		IScope scope = null; // GAMA.obtainNewScope();
 		setTransparency(scope, transp == null ? transparency : transp);
 		setPosition(scope, pos == null ? loc : pos);
 		setSize(scope, ext == null ? size : ext);
@@ -62,14 +63,24 @@ public class LayerBox implements IDisplayLayerBox {
 		setTrace(scope, tr == null ? trace : tr);
 		setFading(scope, fd == null ? fading : fd);
 		setSelectable(scope, sl == null ? selectable : sl);
+		setConstantBoundingBox(loc.isConst() && size.isConst());
+	}
+
+	@Override
+	public void setConstantBoundingBox(final boolean b) {
+		constantBoundingBox = b;
+		if ( b ) {
+			constantPosition = currentPosition;
+			constantSize = currentSize;
+		}
 	}
 
 	@Override
 	public void compute(final IScope scope) throws GamaRuntimeException {
 		try {
-			currentTransparency =
-				constantTransparency == null ? 1d - Math.min(
-					Math.max(Cast.asFloat(scope, transparency.value(scope)), 0d), 1d) : constantTransparency;
+			currentTransparency = constantTransparency == null
+				? 1d - FastMath.min(FastMath.max(Cast.asFloat(scope, transparency.value(scope)), 0d), 1d)
+				: constantTransparency;
 			currentSelectable =
 				constantSelectable == null ? Cast.asBool(scope, selectable.value(scope)) : constantSelectable;
 			if ( !constantBoundingBox ) {
@@ -136,7 +147,7 @@ public class LayerBox implements IDisplayLayerBox {
 
 	@Override
 	public void setTransparency(final double f) {
-		currentTransparency = constantTransparency = 1d - Math.min(Math.max(f, 0d), 1d);
+		currentTransparency = constantTransparency = 1d - FastMath.min(FastMath.max(f, 0d), 1d);
 	}
 
 	@Override

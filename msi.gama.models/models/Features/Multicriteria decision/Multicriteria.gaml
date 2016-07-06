@@ -1,8 +1,11 @@
 /**
- *  multicriteria
- *  Author: Patrick Taillandier
- *  Description: shows how to use multicriteria operators
- */
+* Name: Multicriteria
+* Author: Patrick Taillandier
+* Description: This model show how to use different methods of multicriteria analysis to look for the best house. Four methods are used : 
+* the Weighted_Means method , the Electre method , the Promethee method  an the Evidence Theory method. Each method uses 
+* different criteria with different weights according to the methods used. 
+* Tags: multi_criteria
+*/
 
 model multicriteria
 
@@ -51,6 +54,8 @@ global {
 	float v2c_price <- 0.0;
 	float v2c_distance <- 0.0;
 	float v2c_area <- 0.0;
+	
+	//Lists that will store the different criteria to use for each method linked with their weights
 	list criteria_WM <- [["name"::"standing", "weight" :: weight_standing],["name"::"price", "weight" :: weight_price],["name"::"distance", "weight" ::weight_distance],["name"::"area", "weight" :: weight_area]]; 
 	list criteria_Electre <- [["name"::"standing", "weight" :: weight_standing, "p"::p_standing, "q"::q_standing, "v"::v_standing, "maximize" :: true],["name"::"price", "weight" :: weight_price, "p"::p_price, "q"::q_price, "v"::v_price,  "maximize" :: true],["name"::"distance", "weight" ::weight_distance, "p"::p_distance, "q"::q_distance, "v"::v_distance,  "maximize" :: true],["name"::"area", "weight" :: weight_area,  "p"::p_area, "q"::q_area, "v"::v_area,  "maximize" :: true]]; 
 	list criteria_Promethee <- [["name"::"standing", "weight" :: weight_standing, "p"::p_standing, "q"::q_standing, "s"::s_standing, "maximize" :: true],["name"::"price", "weight" :: weight_price, "p"::p_price, "q"::q_price, "s"::s_price,  "maximize" :: true],["name"::"distance", "weight" ::weight_distance, "p"::p_distance, "q"::q_distance, "s"::s_distance,  "maximize" :: true],["name"::"area", "weight" :: weight_area,  "p"::p_area, "q"::q_area, "s"::s_area,  "maximize" :: true]];  
@@ -119,9 +124,9 @@ species people  {
 	}
 	
 	list<list> houses_eval {
-		list<list> candidates <- [];
+		list<list> candidates;
 		loop bat over: house {
-			list<float> cand <- [];
+			list<float> cand;
 			add bat.standing / 5 to: cand;
 			add ((500000 - bat.price) / 500000) to: cand;
 			add ((100 - (self distance_to bat)) / 100) to: cand;
@@ -187,10 +192,10 @@ experiment multicriteria type: gui {
 	parameter "veto threshold of the price criterion" var:v_price category: "Veto";
 	parameter "veto threshold of the distance criterion" var:v_distance category: "Veto";
 	parameter "veto threshold of the area criterion" var:v_area category: "Veto";
-	parameter "max prefence value of the standing criterion" var:v_standing category: "Max preference value";
-	parameter "max prefence value of the price criterion" var:v_price category: "Max preference value";
-	parameter "max prefence value of the distance criterion" var:v_distance category: "Max preference value";
-	parameter "max prefence value of the area criterion" var:v_area category: "Max preference value";
+	parameter "max preference value of the standing criterion" var:v_standing category: "Max preference value";
+	parameter "max preference value of the price criterion" var:v_price category: "Max preference value";
+	parameter "max preference value of the distance criterion" var:v_distance category: "Max preference value";
+	parameter "max preference value of the area criterion" var:v_area category: "Max preference value";
 	parameter "min criterion threshold of the standing criterion" var:s1_standing category: "Evidence Theory";
 	parameter "min criterion threshold of the price criterion" var:s1_price category: "Evidence Theory";
 	parameter "min criterion threshold of the distance criterion" var:s1_distance category: "Evidence Theory";

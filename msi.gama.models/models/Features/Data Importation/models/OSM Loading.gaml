@@ -1,8 +1,10 @@
 /**
- *  simpleOSMLoading
- *  Author: Patrick Taillandier
- *  Description: Show how to import a OSM file and create agents from it. Concerning the use of OSM file for traffic models, more details are given in the driving skill folder
- */
+* Name: OSM file to Agents
+* Author:  Patrick Taillandier
+* Description: Model which shows how to import a OSM File in GAMA and use it to create Agents. In this model, a filter is done to take only into account the roads 
+* and the buildings contained in the file. 
+* Tags:  load_file, osm, gis
+*/
 
 model simpleOSMLoading 
  
@@ -13,8 +15,8 @@ global{
 	//OSM file to load
 	file<geometry> osmfile <-  file<geometry>(osm_file("../includes/rouen.gz", filtering))  ;
 	
+	//compute the size of the environment from the envelope of the OSM file
 	geometry shape <- envelope(osmfile);
-	graph the_graph; 
 	
 	init {
 		//possibility to load all of the attibutes of the OSM data: for an exhaustive list, see: http://wiki.openstreetmap.org/wiki/Map_Features
@@ -23,30 +25,26 @@ global{
 		//from the created generic agents, creation of the selected agents
 		ask osm_agent {
 			if (length(shape.points) = 1 and highway_str != nil ) {
-				create node_agent with: [shape ::shape, type:: highway_str];
+				create node_agent with: [shape ::shape, type:: highway_str]; 
 			} else {
 				if (highway_str != nil ) {
 					create road with: [shape ::shape, type:: highway_str];
 				} else if (building_str != nil){
 					create building with: [shape ::shape];
-				} 
+				}  
 			}
+			//do the generic agent die
 			do die;
 		}
-		the_graph <- as_edge_graph(road);
-		create people number: 100 {
-			target <- any_location_in(one_of (road)) ;
-			location <- any_location_in (one_of(road));
-		} 
 	}	
 }
 
-species osm_agent frequency: 0{
+species osm_agent {
 	string highway_str;
 	string building_str;
 } 
 	
-species road frequency: 0{
+species road {
 	rgb color <- rnd_color(255);
 	string type;
 	aspect default {
@@ -61,31 +59,18 @@ species node_agent {
 	}
 } 
 	
-species building frequency: 0{
-	rgb color <-  rgb(200,200,200);
+species building {
 	aspect default { 
-		draw shape color: color;
+		draw shape color: rgb(200,200,200);
 	}
 }  
 
-species people skills: [moving] {
-	point target;
-	reflex movement {
-		do goto on:the_graph target:target speed:1;
-	}
-	aspect default {
-		draw circle(3) color: #green;
-	}
-		
-}
-
 experiment load_OSM type: gui {
 	output {
-		display map type: opengl ambient_light: 100{
+		display map type: opengl {
 			species building refresh: false;
 			species road refresh: false  ;
 			species node_agent refresh: false ;
-			species people;
 		}
 	}
 }

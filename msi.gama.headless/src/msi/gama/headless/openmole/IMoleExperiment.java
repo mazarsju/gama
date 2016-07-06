@@ -11,19 +11,11 @@
  **********************************************************************************************/
 package msi.gama.headless.openmole;
 
+import msi.gama.headless.core.IExperiment;
 
-public interface IMoleExperiment { 
-
-	public void setup(final String experimentName);
-	public void setup(final String experimentName, final long seed);
-	
-	public long step();
-	
-	public void setParameter(final String parameterName, final Object value);
-	public Object getOutput(final String parameterName);
-	public Object getVariableOutput(final String parameterName);
-	
-	public void dispose();
-	
-	
+public interface IMoleExperiment extends IExperiment
+{
+    //keep to ensure compatibility with openMole	
+	void play(int finalStep);
+	void play(String exp, int finalStep);
 }

@@ -1,34 +1,35 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'TypeDescription.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.descriptions;
 
 import java.util.*;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.Resource;
 import msi.gama.common.interfaces.IGamlIssue;
 import msi.gama.util.*;
 import msi.gaml.compilation.AbstractGamlAdditions;
 import msi.gaml.expressions.*;
 import msi.gaml.factories.ChildrenProvider;
+import msi.gaml.skills.ISkill;
 import msi.gaml.statements.Facets;
 import msi.gaml.types.IType;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
 
 /**
  * A class that represents skills and species (either built-in or introduced by users)
  * The class TypeDescription.
- * 
+ *
  * @author drogoul
  * @since 23 fevr. 2013
- * 
+ *
  */
 public abstract class TypeDescription extends SymbolDescription {
 
@@ -37,13 +38,21 @@ public abstract class TypeDescription extends SymbolDescription {
 	protected Class javaBase;
 	protected TypeDescription parent;
 	private static int varCount = 0;
+	private final String plugin;
 
 	public TypeDescription(final String keyword, final Class clazz, final IDescription macroDesc,
-		final IDescription parent, final ChildrenProvider cp, final EObject source, final Facets facets) {
+		final IDescription parent, final ChildrenProvider cp, final EObject source, final Facets facets,
+		final String plugin) {
 		super(keyword, macroDesc, cp, source, facets);
 		// parent can be null
 		setJavaBase(clazz);
 		setParent((TypeDescription) parent);
+		this.plugin = plugin;
+	}
+
+	@Override
+	public String getDefiningPlugin() {
+		return plugin;
 	}
 
 	public void copyJavaAdditions() {
@@ -75,7 +84,7 @@ public abstract class TypeDescription extends SymbolDescription {
 
 	public Collection<String> getVarNames() {
 		if ( variables != null ) { return variables.keySet(); }
-		return GamaListFactory.EMPTY_LIST;
+		return GamaListFactory.create();
 	}
 
 	public VariableDescription getVariable(final String name) {
@@ -88,14 +97,14 @@ public abstract class TypeDescription extends SymbolDescription {
 	}
 
 	@Override
-	public IExpression getVarExpr(final String n) {
+	public IExpression getVarExpr(final String n, final boolean asField) {
 		final VariableDescription vd = getVariable(n);
 		if ( vd == null ) {
 			IDescription desc = getAction(n);
 			if ( desc != null ) { return new DenotedActionExpression(desc); }
 			return null;
 		}
-		return vd.getVarExpr();
+		return vd.getVarExpr(asField);
 	}
 
 	protected void addVariableNoCheck(final VariableDescription vd) {
@@ -117,9 +126,8 @@ public abstract class TypeDescription extends SymbolDescription {
 
 	private void markTypeDifference(final VariableDescription existingVar, final VariableDescription newVar,
 		final IType existingType, final IType newType, final boolean error) {
-		String msg =
-			"Type (" + newType + ") differs from that (" + existingType + ") of the implementation of  " +
-				newVar.getName() + " in " + existingVar.getOriginName();
+		String msg = "Type (" + newType + ") differs from that (" + existingType + ") of the implementation of  " +
+			newVar.getName() + " in " + existingVar.getOriginName();
 		if ( existingVar.isBuiltIn() ) {
 			if ( error ) {
 				newVar.error(msg, IGamlIssue.WRONG_REDEFINITION, NAME);
@@ -127,15 +135,18 @@ public abstract class TypeDescription extends SymbolDescription {
 				newVar.warning(msg, IGamlIssue.WRONG_REDEFINITION, NAME);
 			}
 		} else {
-			Resource newResource = newVar.getUnderlyingElement(null).eResource();
-			Resource existingResource = existingVar.getUnderlyingElement(null).eResource();
-			if ( newResource.equals(existingResource) ) {
+			EObject newObject = newVar.getUnderlyingElement(null);
+			Resource newResource = newObject == null ? null : newObject.eResource();
+			EObject existingObject = existingVar.getUnderlyingElement(null);
+			Resource existingResource = existingObject == null ? null : existingObject.eResource();
+			boolean same = newResource == null ? existingResource == null : newResource.equals(existingResource);
+			if ( same ) {
 				if ( error ) {
 					newVar.error(msg, IGamlIssue.WRONG_REDEFINITION, NAME);
 				} else {
 					newVar.info(msg, IGamlIssue.WRONG_REDEFINITION, NAME);
 				}
-			} else {
+			} else if ( existingResource != null ) {
 				if ( error ) {
 					newVar.error(msg + " in  imported file " + existingResource.getURI().lastSegment(),
 						IGamlIssue.WRONG_REDEFINITION, NAME);
@@ -151,6 +162,12 @@ public abstract class TypeDescription extends SymbolDescription {
 	public void markVariableRedefinition(final VariableDescription existingVar, final VariableDescription newVar) {
 		if ( newVar.isBuiltIn() && existingVar.isBuiltIn() ) { return; }
 		if ( newVar.getOriginName().equals(existingVar.getOriginName()) ) {
+			//TODO must be review carefully the inheritance in comodel
+			/// temporay fix for co-model, variable in micro-model can be defined multi time
+			if(!newVar.getModelDescription().getAlias().equals("")){
+				return;
+			}
+			///
 			existingVar.error("Attribute " + newVar.getName() + " is defined twice", IGamlIssue.DUPLICATE_DEFINITION,
 				NAME);
 			newVar.error("Attribute " + newVar.getName() + " is defined twice", IGamlIssue.DUPLICATE_DEFINITION, NAME);
@@ -195,7 +212,7 @@ public abstract class TypeDescription extends SymbolDescription {
 			addVariableNoCheck(vd);
 			return;
 		}
-		// A previous deifnition has been found
+		// A previous definition has been found
 		VariableDescription existing = getVariable(newVarName);
 		// We assert whether their types are compatible or not
 		if ( assertVarsAreCompatible(existing, vd) ) {
@@ -239,9 +256,11 @@ public abstract class TypeDescription extends SymbolDescription {
 
 	protected void sortVars() {
 		if ( variables == null ) { return; }
-		// GuiUtils.debug("***** Sorting variables of " + getNameFacetValue());
+		// scope.getGui().debug("***** Sorting variables of " + getNameFacetValue());
+
 		final List<VariableDescription> result = new ArrayList();
 		final Collection<VariableDescription> vars = getVariables().values();
+
 		for ( final VariableDescription var : vars ) {
 			if ( var != null ) {
 				var.usedVariablesIn(getVariables());
@@ -291,7 +310,7 @@ public abstract class TypeDescription extends SymbolDescription {
 				li.next();
 				li.add(var);
 				added = true;
-			};
+			} ;
 		}
 		if ( !added ) {
 			vl.add(0, var);
@@ -306,7 +325,7 @@ public abstract class TypeDescription extends SymbolDescription {
 		this.parent = parent;
 	}
 
-	public Set<Class> getSkillClasses() {
+	public Set<Class<? extends ISkill>> getSkillClasses() {
 		return Collections.EMPTY_SET;
 	}
 
@@ -329,8 +348,9 @@ public abstract class TypeDescription extends SymbolDescription {
 				TypeDescription.assertActionsAreCompatible(newAction, existing, existing.getOriginName());
 				if ( !existing.isAbstract() ) {
 					if ( existing.isBuiltIn() ) {
-						newAction.info("Action '" + actionName + "' replaces a primitive of the same name defined in " +
-							existing.getOriginName() + ". If it was not your intention, consider renaming it.",
+						newAction.info(
+							"Action '" + actionName + "' replaces a primitive of the same name defined in " +
+								existing.getOriginName() + ". If it was not your intention, consider renaming it.",
 							IGamlIssue.GENERAL);
 					} else if ( from == this ) {
 						duplicateInfo(newAction, existing);
@@ -347,8 +367,9 @@ public abstract class TypeDescription extends SymbolDescription {
 				}
 			}
 		} else if ( newAction.isAbstract() && from != this ) {
-			this.error("Abstract action '" + actionName + "', inherited from " + from.getName() +
-				", should be redefined.", IGamlIssue.MISSING_ACTION, NAME);
+			this.error(
+				"Abstract action '" + actionName + "', inherited from " + from.getName() + ", should be redefined.",
+				IGamlIssue.MISSING_ACTION, NAME);
 			return;
 
 		}
@@ -380,6 +401,7 @@ public abstract class TypeDescription extends SymbolDescription {
 
 	protected void setJavaBase(final Class javaBase) {
 		this.javaBase = javaBase;
+		// System.out.println("" + this + " javaBase: " + javaBase);
 	}
 
 	public boolean isAbstract() {
@@ -404,7 +426,7 @@ public abstract class TypeDescription extends SymbolDescription {
 
 	/**
 	 * Returns the parent species.
-	 * 
+	 *
 	 * @return a TypeDescription or null
 	 */
 	public TypeDescription getParent() {

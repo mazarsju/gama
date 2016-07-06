@@ -1,449 +1,85 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'GLUtilLight.java', in plugin 'msi.gama.jogl2', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package ummisco.gama.opengl.utils;
 
 import java.awt.Color;
-import msi.gama.metamodel.shape.GamaPoint;
-import com.jogamp.opengl.*;
+import java.util.List;
+
+import com.jogamp.opengl.GL;
+import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.fixedfunc.GLLightingFunc;
-import com.jogamp.opengl.glu.*;
+import com.jogamp.opengl.glu.GLU;
+import com.jogamp.opengl.glu.GLUquadric;
+import com.jogamp.opengl.util.gl2.GLUT;
+
+import msi.gama.metamodel.shape.GamaPoint;
+import msi.gama.outputs.LayeredDisplayData;
+import msi.gama.outputs.LightPropertiesStructure;
+import msi.gama.util.GamaColor;
+import msi.gaml.operators.Maths;
+import ummisco.gama.opengl.JOGLRenderer;
 
 public class GLUtilLight {
-
-	private static float light0Position[] = new float[4];
-	private static float light1Position[] = new float[4];
 
 	public static final int fogMode[] = { GL2.GL_EXP, GL2.GL_EXP2, GL2.GL_LINEAR };
 
 	/**
-	 * 
-	 * @param gl
-	 * @param r red
-	 * @param g green
-	 * @param b blue
-	 * @param a-alfa s cooficient of transparency
-	 */
-	public static void createAmbientLight(final GL2 gl, final float r, final float g, final float b, final float a) {
-		gl.glEnable(GLLightingFunc.GL_LIGHTING);
-		float colors[] = { r, g, b, a };
-		gl.glLightModelfv(GL2ES1.GL_LIGHT_MODEL_AMBIENT, colors, 0);
-	}
-
-	/**
-	 * 
-	 * @param gl
-	 * @param colors
-	 * @param position
-	 * @param n_ofLight
-	 */
-	public static void createDiffuseLight(final GL2 gl, final float colors[], final float position[],
-		final int n_ofLight) {
-		switch (n_ofLight) {
-			case 0: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT0);
-			}
-				break;
-			case 1: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT1);
-			}
-				break;
-			case 2: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT2);
-			}
-				break;
-			case 3: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT3);
-			}
-				break;
-			case 4: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT4);
-			}
-				break;
-			case 5: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT5);
-			}
-				break;
-			case 6: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT6);
-			}
-				break;
-			case 7: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT7);
-			}
-				break;
-			default:
-				System.out.println("Error:openGL has only 8 lights available, the first id being light0.");
-		}
-
-	}// end of create Diffuse Light
-
-	/**
-	 * Default color-white and position 100 in each direction
-	 * @param gl
-	 * @param colors
-	 * @param position
-	 * @param n_ofLight
-	 */
-	public static void createDiffuseLight(final GL2 gl, final int n_ofLight, final float pos) {
-		float colors[] = { 1, 1, 1, 1 };
-		float position[] = { pos, pos, pos, 1 };
-
-		switch (n_ofLight) {
-			case 0: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT0);
-			}
-				break;
-			case 1: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT1);
-			}
-				break;
-			case 2: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT2);
-			}
-				break;
-			case 3: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT3);
-			}
-				break;
-			case 4: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT4);
-			}
-				break;
-			case 5: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT5);
-			}
-				break;
-			case 6: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT6);
-			}
-				break;
-			case 7: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_DIFFUSE, colors, 0);
-				gl.glEnable(GLLightingFunc.GL_LIGHT7);
-			}
-				break;
-			default:
-				System.out.println("Error:openGL has only 8 lights available, the first id being light0.");
-		}
-	}// end of create Diffuse Light
-
-	/**
-	 * 
-	 * @param gl
-	 * @param isSoft if is false then surfaces wont flash
-	 * @param alfa - determines black-white-shade color of light R=G=B=alfa
-	 * @param size takse vaules from 0 to 128 and determines size of flash when soft body
-	 */
-	public static void createSoftMaterial(final GL2 gl, final boolean isSoft, float alfa, int size) {
-		if ( isSoft ) {
-			float cooficientColor[] = { alfa, alfa, alfa, 1 };
-			gl.glMaterialfv(GL.GL_FRONT, GLLightingFunc.GL_SPECULAR, cooficientColor, 0);
-			gl.glMateriali(GL.GL_FRONT, GLLightingFunc.GL_SHININESS, size);
-
-		} else {
-			alfa = 0;
-			size = 0;
-			float cooficientColor[] = { alfa, alfa, alfa, 1 };
-			gl.glMaterialfv(GL.GL_FRONT, GLLightingFunc.GL_SPECULAR, cooficientColor, 0);
-			gl.glMateriali(GL.GL_FRONT, GLLightingFunc.GL_SHININESS, size);
-		}
-	}
-
-	/**
-	 * 
-	 * @param gl
-	 * @param disp_color dispersion color
-	 * @param flash_color
-	 * @param position
-	 * @param direction
-	 * @param size a width of light
-	 * @param alfa a blank cooficient
-	 * @param n_ofLight
-	 */
-	public static void createDirectionLight(final GL2 gl, final float disp_color[], final float flash_color[],
-		final float position[], final float direction[], final float size, final float alfa, final int n_ofLight) {
-		switch (n_ofLight) {
-			case 0: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT0);
-			}
-				break;
-			case 1: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT1);
-			}
-				break;
-			case 2: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT2);
-			}
-				break;
-			case 3: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT3);
-			}
-				break;
-			case 4: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT4);
-			}
-				break;
-			case 5: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT5);
-			}
-				break;
-			case 6: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT6);
-			}
-				break;
-			case 7: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT7);
-			}
-				break;
-			default:
-				System.out.println("Error:openGL has avialable only 8 lights, the first id light0.");
-		}
-
-	}// END LIGHT DIRECTION
-
-	/**
-	 * A shorter version method which create DirectionalLight. Size of bundle light has 30,
-	 * alfa is 1 and disp&flash color are white
-	 * @param gl
-	 * @param position
-	 * @param direction
-	 * @param n_ofLight
-	 */
-	public static void createDirectionLight(final GL2 gl, final float position[], final float direction[],
-		final int n_ofLight) {
-		float disp_color[] = { 1, 1, 1, 1 };
-		float flash_color[] = { 1, 1, 1, 1 };
-		float size = 30;
-		float alfa = 1;
-		switch (n_ofLight) {
-			case 0: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT0);
-			}
-				break;
-			case 1: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT1);
-			}
-				break;
-			case 2: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT2, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT2);
-			}
-				break;
-			case 3: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT3, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT3);
-			}
-				break;
-			case 4: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT4, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT4);
-			}
-				break;
-			case 5: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT5, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT5);
-			}
-				break;
-			case 6: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT6, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT6);
-			}
-				break;
-			case 7: {
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_POSITION, position, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_DIFFUSE, disp_color, 0);
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPECULAR, flash_color, 0);
-
-				gl.glLightfv(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPOT_DIRECTION, direction, 0);
-				gl.glLightf(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPOT_CUTOFF, size);
-				gl.glLightf(GLLightingFunc.GL_LIGHT7, GLLightingFunc.GL_SPOT_EXPONENT, alfa);
-				gl.glEnable(GLLightingFunc.GL_LIGHT7);
-			}
-				break;
-			default:
-				System.out.println("Error:openGL has avialable only 8 lights, the first id light0.");
-		}
-
-	}// END LIGHT DIRECTION
-
-	/**
 	 * Creates fog on the scene.
-	 * @param gl - GL object
-	 * @param color - fog color
-	 * @param start - begining of the fog
-	 * @param end - end distance of the fog
-	 * @param mode - set type of fog param GL_EXP (the default), GL_EXP2, or GL_LINEAR
-	 * @param fog_hint hint specifies whether fog calculations are done per pixel (GL_NICEST) or per vertex
-	 *            (GL_FASTEST).
+	 * 
+	 * @param gl
+	 *            - GL object
+	 * @param color
+	 *            - fog color
+	 * @param start
+	 *            - begining of the fog
+	 * @param end
+	 *            - end distance of the fog
+	 * @param mode
+	 *            - set type of fog param GL_EXP (the default), GL_EXP2, or
+	 *            GL_LINEAR
+	 * @param fog_hint
+	 *            hint specifies whether fog calculations are done per pixel
+	 *            (GL_NICEST) or per vertex (GL_FASTEST).
 	 */
-	public static void enableFog(final GL2 gl, final float color[], final float start, final float end, final int mode,
-		final int fog_hint, final float density) {
-		gl.glEnable(GL2ES1.GL_FOG);
-		gl.glFogfv(GL2ES1.GL_FOG_COLOR, color, 0);
-		gl.glFogf(GL2ES1.GL_FOG_DENSITY, density);
-		gl.glFogf(GL2ES1.GL_FOG_START, start);
-		gl.glFogf(GL2ES1.GL_FOG_END, end);
-		gl.glFogf(GL2ES1.GL_FOG_MODE, mode);
-		gl.glHint(GL2ES1.GL_FOG_HINT, fog_hint);
-	}
+	// public static void enableFog(final GL2 gl, final float color[], final
+	// float start, final float end, final int mode,
+	// final int fog_hint, final float density) {
+	// gl.glEnable(GL2ES1.GL_FOG);
+	// gl.glFogfv(GL2ES1.GL_FOG_COLOR, color, 0);
+	// gl.glFogf(GL2ES1.GL_FOG_DENSITY, density);
+	// gl.glFogf(GL2ES1.GL_FOG_START, start);
+	// gl.glFogf(GL2ES1.GL_FOG_END, end);
+	// gl.glFogf(GL2ES1.GL_FOG_MODE, mode);
+	// gl.glHint(GL2ES1.GL_FOG_HINT, fog_hint);
+	// }
 
 	public static void enableSmooth(final GL2 gl) {
 		gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
 	}
 
-	public static void enableFlat(final GL2 gl) {
-		gl.glShadeModel(GLLightingFunc.GL_FLAT);
-	}
-
-	public static void enableBlend(final GL2 gl) {
-		gl.glEnable(GL.GL_BLEND);
-		gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	public static void enableColorMaterial(final GL2 gl) {
-		gl.glEnable(GLLightingFunc.GL_COLOR_MATERIAL);
-		gl.glColorMaterial(GL.GL_FRONT_AND_BACK, GLLightingFunc.GL_AMBIENT_AND_DIFFUSE);
-	}
+	// public static void enableFlat(final GL2 gl) {
+	// gl.glShadeModel(GLLightingFunc.GL_FLAT);
+	// }
+	//
+	// public static void enableBlend(final GL2 gl) {
+	// gl.glEnable(GL.GL_BLEND);
+	// gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+	// }
+	//
+	// public static void enableColorMaterial(final GL2 gl) {
+	// gl.glEnable(GLLightingFunc.GL_COLOR_MATERIAL);
+	// gl.glColorMaterial(GL.GL_FRONT_AND_BACK,
+	// GLLightingFunc.GL_AMBIENT_AND_DIFFUSE);
+	// }
 
 	public static void enableDepthTest(final GL2 gl) {
 		// the depth buffer & enable the depth testing
@@ -452,86 +88,72 @@ public class GLUtilLight {
 		gl.glDepthFunc(GL.GL_LEQUAL); // the type of depth test to do
 	}
 
-	public static void enableLighting(final GL2 gl) {
-		gl.glEnable(GLLightingFunc.GL_LIGHTING);
-	}
+	// public static void enableLighting(final GL2 gl) {
+	// gl.glEnable(GLLightingFunc.GL_LIGHTING);
+	// }
 
-	public static void disableFog(final GL2 gl) {
-		gl.glDisable(GL2ES1.GL_FOG);
-	}
+	// public static void disableFog(final GL2 gl) {
+	// gl.glDisable(GL2ES1.GL_FOG);
+	// }
 
-	public static void disableLight(final GL2 gl) {
-		gl.glDisable(GLLightingFunc.GL_LIGHTING);
-	}
+	// public static void disableLight(final GL2 gl) {
+	// gl.glDisable(GLLightingFunc.GL_LIGHTING);
+	// }
+	//
+	// public static void disableBlend(final GL2 gl) {
+	// gl.glDisable(GL.GL_BLEND);
+	// }
+	//
+	// public static void disableColorMaterial(final GL2 gl) {
+	// gl.glDisable(GLLightingFunc.GL_COLOR_MATERIAL);
+	// }
+	//
+	// public static void disableDepthTest(final GL2 gl) {
+	// gl.glDisable(GL.GL_DEPTH_TEST);
+	// }
 
-	public static void disableBlend(final GL2 gl) {
-		gl.glDisable(GL.GL_BLEND);
-	}
-
-	public static void disableColorMaterial(final GL2 gl) {
-		gl.glDisable(GLLightingFunc.GL_COLOR_MATERIAL);
-	}
-
-	public static void disableDepthTest(final GL2 gl) {
-		gl.glDisable(GL.GL_DEPTH_TEST);
-	}
-
-	public static void disableSoftMaterial(final GL2 gl) {
-		float cooficientColor[] = { 0, 0, 0, 1 };
-		gl.glMaterialfv(GL.GL_FRONT, GLLightingFunc.GL_SPECULAR, cooficientColor, 0);
-		gl.glMateriali(GL.GL_FRONT, GLLightingFunc.GL_SHININESS, 0);
-
-	}
+	// public static void disableSoftMaterial(final GL2 gl) {
+	// final float cooficientColor[] = { 0, 0, 0, 1 };
+	// gl.glMaterialfv(GL.GL_FRONT, GLLightingFunc.GL_SPECULAR, cooficientColor,
+	// 0);
+	// gl.glMateriali(GL.GL_FRONT, GLLightingFunc.GL_SHININESS, 0);
+	//
+	// }
 
 	public static void setAmbiantLight(final GL2 gl, final Color ambientLightValue) {
-		float[] lightAmbientValue =
-			{ ambientLightValue.getRed() / 255.0f, ambientLightValue.getGreen() / 255.0f,
+		final float[] lightAmbientValue = { ambientLightValue.getRed() / 255.0f, ambientLightValue.getGreen() / 255.0f,
 				ambientLightValue.getBlue() / 255.0f, 1.0f };
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_AMBIENT, lightAmbientValue, 0);
+		gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_AMBIENT, lightAmbientValue, 0);
 	}
 
-	public static void setDiffuseLight(final GL2 gl, final Color ambientLightValue, final GamaPoint pos) {
-		// Diffuse light 0
-		float[] light1DiffuseValue =
-			{ ambientLightValue.getRed() / 255.0f, ambientLightValue.getGreen() / 255.0f,
-				ambientLightValue.getBlue() / 255.0f, 1.0f };
-		// Diffuse light location xyz (directed light)
-		float light1Position[] = { (float) pos.getX(), (float) pos.getY(), (float) pos.getZ() };
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, light1DiffuseValue, 0);
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, light1Position, 0);
+	public static void setDiffuseLight(final GL2 gl, final Color diffuseLight, final GamaPoint pos) {
+		// This method is deprecated !! Use "light" statement instead.
+		// change the diffusion light value for GL_LIGHT1
+//		final float[] light1DiffuseValue = { diffuseLight.getRed() / 255.0f, diffuseLight.getGreen() / 255.0f,
+//				diffuseLight.getBlue() / 255.0f, 1.0f };
+		
+//		// Diffuse light location xyz (directed light)
+//		final float light1Position[] = { (float) pos.getX(), (float) pos.getY(), (float) pos.getZ() };
+//		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, light1DiffuseValue, 0);
+//		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, light1Position, 0);
 	}
 
-	public static void DrawDiffuseLight0(final float[] light0Position, final GL2 gl, final GLU glu,
-		final double radius, final Color diffuseLightValue) {
-		gl.glTranslatef(light0Position[0], light0Position[1], light0Position[2]);
-		gl.glColor3d(diffuseLightValue.getRed() / 255.0, diffuseLightValue.getGreen() / 255.0,
-			diffuseLightValue.getBlue() / 255.0);
-		DrawSphere(gl, glu, radius);
-		gl.glTranslatef(-light0Position[0], -light0Position[1], -light0Position[2]);
-	}
-
-	public static void DrawDiffuseLights(final GL2 gl, final GLU glu, final double radius) {
-		DrawLight0(gl, glu, radius);
-		DrawLight1(gl, glu, radius);
-	}
-
-	public static void DrawLight0(final GL2 gl, final GLU glu, final double radius) {
-		gl.glTranslatef(light0Position[0], light0Position[1], light0Position[2]);
-		gl.glColor3f(1.0f, 1.0f, 0.0f);
-		DrawSphere(gl, glu, radius);
-		gl.glTranslatef(-light0Position[0], -light0Position[1], -light0Position[2]);
-	}
-
-	public static void DrawLight1(final GL2 gl, final GLU glu, final double radius) {
-		gl.glTranslatef(light1Position[0], light1Position[1], light1Position[2]);
-		gl.glColor3f(1.0f, 1.0f, 0.0f);
-		DrawSphere(gl, glu, radius);
-		gl.glTranslatef(-light1Position[0], -light1Position[1], -light1Position[2]);
-	}
+	// public static void DrawDiffuseLight0(final float[] light0Position, final
+	// GL2 gl, final GLU glu, final double radius,
+	// final Color diffuseLightValue) {
+	// gl.glTranslatef(light0Position[0], light0Position[1], light0Position[2]);
+	// GLUtilGLContext.SetCurrentColor(gl, (float) (diffuseLightValue.getRed() /
+	// 255.0),
+	// (float) (diffuseLightValue.getGreen() / 255.0), (float)
+	// (diffuseLightValue.getBlue() / 255.0));
+	// DrawSphere(gl, glu, radius);
+	// gl.glTranslatef(-light0Position[0], -light0Position[1],
+	// -light0Position[2]);
+	// }
 
 	public static void DrawSphere(final GL gl, final GLU glu, final double radius) {
 		// Draw sphere (possible styles: FILL, LINE, POINT).
-		GLUquadric earth = glu.gluNewQuadric();
+		final GLUquadric earth = glu.gluNewQuadric();
 		glu.gluQuadricDrawStyle(earth, GLU.GLU_FILL);
 		glu.gluQuadricNormals(earth, GLU.GLU_FLAT);
 		glu.gluQuadricOrientation(earth, GLU.GLU_OUTSIDE);
@@ -541,61 +163,43 @@ public class GLUtilLight {
 		glu.gluDeleteQuadric(earth);
 	}
 
-	public static void InitializeLighting(final GL2 gl, final float widthEnv, final float heightEnv,
-		final Color ambientLightValue, final Color diffuseLightValue) {
+	public static void InitializeLighting(final GL2 gl, LayeredDisplayData data) {
 
 		// ambient
-		float[] lightAmbientValue =
-			{ ambientLightValue.getRed() / 255.0f, ambientLightValue.getGreen() / 255.0f,
+		Color ambientLightValue = data.getAmbientLightColor();
+		final float[] lightAmbientValue = { ambientLightValue.getRed() / 255.0f, ambientLightValue.getGreen() / 255.0f,
 				ambientLightValue.getBlue() / 255.0f, 1.0f };
 		gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_AMBIENT, lightAmbientValue, 0);
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_AMBIENT, lightAmbientValue, 0);
-
-		// Diffuse
-		float[] lightDiffuseValue =
-			{ diffuseLightValue.getRed() / 255.0f, diffuseLightValue.getGreen() / 255.0f,
-				diffuseLightValue.getBlue() / 255.0f, 1.0f };
-
-		boolean use2light = false;
-		// use Two lights
-		if ( use2light ) {
-			light0Position[0] = widthEnv * 2;
-			light0Position[1] = -heightEnv / 2;
-			light0Position[2] = 2 * widthEnv;
-			light0Position[3] = 0.0f;
-			gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, lightDiffuseValue, 0);
-			gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, light0Position, 0);
-
-			light1Position[0] = -widthEnv;
-			light1Position[1] = -heightEnv / 2;
-			light1Position[2] = 2 * widthEnv;
-			light1Position[3] = 0.0f;
-			gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, lightDiffuseValue, 0);
-			gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, light1Position, 0);
-
-			gl.glEnable(GLLightingFunc.GL_LIGHT0); // Enable Light-0
-			gl.glEnable(GLLightingFunc.GL_LIGHT1); // Enable Light-1
-		} else {
-			light0Position[0] = widthEnv / 2;
-			light0Position[1] = -heightEnv / 2;
-			light0Position[2] = 2 * widthEnv;
-			light0Position[3] = 0.0f;
-			gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, lightDiffuseValue, 0);
-			gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, light0Position, 0);
-
-			gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, lightDiffuseValue, 0);
-			gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, light0Position, 0);
-
-			gl.glEnable(GLLightingFunc.GL_LIGHT0);
-			gl.glEnable(GLLightingFunc.GL_LIGHT1);
+		// deactivate diffuse light for the light0
+		data.setLightActive(0, true);
+		data.setLightType(0, "direction");
+		data.setDiffuseLightColor(0, new GamaColor(0,0,0,0));
+		
+		// default value for diffuse light
+		boolean useDefaultValueForLight1 = true;
+		for (LightPropertiesStructure lightProp : data.getDiffuseLights()) {
+			if (lightProp.id == 1) {
+				useDefaultValueForLight1 = false;
+			}
+		}
+		if (useDefaultValueForLight1)
+		{
+			data.setLightActive(1, true);
+			// directional light
+			data.setLightType(1, "direction");
+			data.setLightDirection(1, new GamaPoint(0.5,0.5,-1,0) );
+			// white color
+			data.setDiffuseLightColor(1, new GamaColor(127,127,127,255));
 		}
 
 		// set material properties which will be assigned by glColor
 		gl.glColorMaterial(GL.GL_FRONT_AND_BACK, GLLightingFunc.GL_AMBIENT_AND_DIFFUSE);
+		gl.glLightModelf(GL2.GL_LIGHT_MODEL_TWO_SIDE, GL2.GL_TRUE);
 		// enable color tracking
 		gl.glEnable(GLLightingFunc.GL_COLOR_MATERIAL);
 
-		// FIXME: Arno 02/03/2014 glMaterial is deprecated http://www.felixgers.de/teaching/jogl/glColorMaterial.html
+		// FIXME: Arno 02/03/2014 glMaterial is deprecated
+		// http://www.felixgers.de/teaching/jogl/glColorMaterial.html
 		/*
 		 * float[] rgba = { 0.5f, 0.5f, 0.5f, 1.0f };
 		 * gl.glMaterialfv(GL.GL_FRONT, GLLightingFunc.GL_AMBIENT, rgba, 0);
@@ -607,112 +211,303 @@ public class GLUtilLight {
 
 	public static void UpdateAmbiantLightValue(final GL2 gl, final GLU glu, final Color ambiantLightValue) {
 
-		float[] lightAmbientValue =
-			{ ambiantLightValue.getRed() / 255.0f, ambiantLightValue.getGreen() / 255.0f,
+		final float[] lightAmbientValue = { ambiantLightValue.getRed() / 255.0f, ambiantLightValue.getGreen() / 255.0f,
 				ambiantLightValue.getBlue() / 255.0f, 1.0f };
 		gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_AMBIENT, lightAmbientValue, 0);
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_AMBIENT, lightAmbientValue, 0);
 	}
 
-	public static void UpdateDiffuseLightValue(final GL2 gl, final GLU glu, final Color diffuseLightValue) {
-		float[] lightDiffuseValue =
-			{ diffuseLightValue.getRed() / 255.0f, diffuseLightValue.getGreen() / 255.0f,
-				diffuseLightValue.getBlue() / 255.0f, 1.0f };
-		gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_DIFFUSE, lightDiffuseValue, 0);
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_DIFFUSE, lightDiffuseValue, 0);
-
+	public static void NotifyOpenGLTranslation(final GL2 gl, final double[] translation, final List<LightPropertiesStructure> lightPropertiesList, LayeredDisplayData data) {
+		for (final LightPropertiesStructure lightProperties : lightPropertiesList) {
+			if (lightProperties.active) {
+				final float[] position = new float[] {(float)lightProperties.position.x,(float)lightProperties.position.y,(float)lightProperties.position.z};
+				double[] newPos = new double[]{position[0] - translation[0],
+						position[1] - translation[1], position[2] - translation[2]}; 
+				gl.glLightfv(lightProperties.id, GLLightingFunc.GL_POSITION, new float[] {(float) newPos[0],(float) newPos[1],(float) newPos[2]}, 0);
+				data.setLightPosition(lightProperties.id, new GamaPoint(newPos[0],newPos[1],newPos[2]));
+			}
+		}
 	}
-
-	public static void UpdateDiffuseLightPosition(final GL2 gl, final GLU glu, final float[] lightDiffusePos) {
-
-		gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, lightDiffusePos, 0);
-		gl.glLightfv(GLLightingFunc.GL_LIGHT1, GLLightingFunc.GL_POSITION, lightDiffusePos, 0);
-
+	
+	public static double[] QuaternionRotate(final double[] initVector3, final double[] quaternionRotation) {
+		double[] result = new double[3];
+		// a, b, c are the normalized composants of the axis.
+		double[] axis = new double[] {quaternionRotation[0],quaternionRotation[1],quaternionRotation[2]};
+		double angle = quaternionRotation[3];
+		double a = axis[0]/(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+		double b = -axis[1]/(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+		double c = axis[2]/(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+		// x, y, z are the initial position of the light.
+		double x = initVector3[0];
+		double y = initVector3[1];
+		double z = initVector3[2];
+		result[0] = x * (a*a + (1-a*a) * Maths.cos(angle))
+				+ y * (a*b * (1-Maths.cos(angle) - c * Maths.sin(angle)))
+				+ z * (a*c * (1-Maths.cos(angle) + b * Maths.sin(angle)));
+		result[1] = x * (a*b * (1-Maths.cos(angle) + c * Maths.sin(angle)))
+				+ y * (b*b + (1-b*b) * Maths.cos(angle))
+				+ z * (b*c * (1 - Maths.cos(angle)) - a * Maths.sin(angle));
+		result[2] = x * (a*c * (1 - Maths.cos(angle)) - b * Maths.sin(angle))
+				+ y * (b*c * (1 - Maths.cos(angle)) + a * Maths.sin(angle))
+				+ z * (c*c + (1 - c*c) * Maths.cos(angle));
+		return result;
 	}
-
-	public static void DrawLight(final GL2 gl, final GLU glu) {
-		gl.glTranslated(light1Position[0], -light1Position[1], light1Position[2]);
-		gl.glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
-		GLUquadric quad = glu.gluNewQuadric();
-		glu.gluQuadricDrawStyle(quad, GLU.GLU_FILL);
-		glu.gluQuadricNormals(quad, GLU.GLU_FLAT);
-		glu.gluQuadricOrientation(quad, GLU.GLU_OUTSIDE);
-		final int slices = 16;
-		final int stacks = 16;
-		glu.gluSphere(quad, 1.0f, slices, stacks);
-		glu.gluDeleteQuadric(quad);
-		gl.glTranslated(-light1Position[0], light1Position[1], -light1Position[2]);
+	
+	public static void NotifyOpenGLRotation(final GL2 gl, final List<LightPropertiesStructure> lightPropertiesList,final double angle,final double[] axis, LayeredDisplayData data) {
+		for (final LightPropertiesStructure lightProperties : lightPropertiesList) {
+			if (lightProperties.active) {
+				// update the position
+				// a, b, c are the normalized composants of the axis.
+				double a = axis[0]/(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+				double b = -axis[1]/(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+				double c = axis[2]/(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+				// x, y, z are the initial position of the light.
+				double x = lightProperties.position.x;
+				double y = lightProperties.position.y;
+				double z = lightProperties.position.z;
+				if (lightProperties.type == LightPropertiesStructure.TYPE.POINT) {
+					double resultX = x * (a*a + (1-a*a) * Maths.cos(angle))
+							+ y * (a*b * (1-Maths.cos(angle) - c * Maths.sin(angle)))
+							+ z * (a*c * (1-Maths.cos(angle) + b * Maths.sin(angle)));
+					double resultY = x * (a*b * (1-Maths.cos(angle) + c * Maths.sin(angle)))
+							+ y * (b*b + (1-b*b) * Maths.cos(angle))
+							+ z * (b*c * (1 - Maths.cos(angle)) - a * Maths.sin(angle));
+					double resultZ = x * (a*c * (1 - Maths.cos(angle)) - b * Maths.sin(angle))
+							+ y * (b*c * (1 - Maths.cos(angle)) + a * Maths.sin(angle))
+							+ z * (c*c + (1 - c*c) * Maths.cos(angle));
+					gl.glLightfv(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_POSITION, new float[] {(float)resultX, (float)resultY, (float)resultZ} , 0);
+					lightProperties.position = new GamaPoint(resultX,resultY,resultZ);
+				}
+				// update the direction
+				// x, y, z are the initial position of the light.
+				x = lightProperties.direction.x;
+				y = -lightProperties.direction.y;
+				z = lightProperties.direction.z;
+				if (lightProperties.type == LightPropertiesStructure.TYPE.POINT) {
+					double resultX = x * (a*a + (1-a*a) * Maths.cos(angle))
+							+ y * (a*b * (1-Maths.cos(angle) - c * Maths.sin(angle)))
+							+ z * (a*c * (1-Maths.cos(angle) + b * Maths.sin(angle)));
+					double resultY = x * (a*b * (1-Maths.cos(angle) + c * Maths.sin(angle)))
+							+ y * (b*b + (1-b*b) * Maths.cos(angle))
+							+ z * (b*c * (1 - Maths.cos(angle)) - a * Maths.sin(angle));
+					double resultZ = x * (a*c * (1 - Maths.cos(angle)) - b * Maths.sin(angle))
+							+ y * (b*c * (1 - Maths.cos(angle)) + a * Maths.sin(angle))
+							+ z * (c*c + (1 - c*c) * Maths.cos(angle));
+					gl.glLightfv(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_SPOT_DIRECTION, new float[] {(float)resultX, (float)resultY, (float)resultZ} , 0);
+					data.setLightDirection(lightProperties.id, new GamaPoint(resultX,JOGLRenderer.Y_FLAG*resultY,resultZ));
+				}
+			}
+		}
 	}
+	
+	public static void UpdateDiffuseLightValue(final GL2 gl, final List<LightPropertiesStructure> lightPropertiesList,
+			final double size, final double worldWidth, final double worldHeight) {
+		for (final LightPropertiesStructure lightProperties : lightPropertiesList) {
+			if (lightProperties.active) {
+				gl.glEnable(GL2.GL_LIGHT0 + lightProperties.id);
+				// GET AND SET ALL THE PROPERTIES OF THE LIGHT
+				// Get the type of light (direction / point / spot)
+				final LightPropertiesStructure.TYPE type = lightProperties.type;
+				// Get and set the color (the diffuse color)
+				final float[] diffuseColor = { lightProperties.color.getRed() / 255.0f,
+						lightProperties.color.getGreen() / 255.0f, lightProperties.color.getBlue() / 255.0f,
+						lightProperties.color.getAlpha() / 255.0f };
+				gl.glLightfv(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_DIFFUSE, diffuseColor, 0);
+				// Get and set the position
+				// the 4th value of the position determines weather of not the
+				// distance object-light has to be computed
+				float[] lightPosition;
+				if (type == LightPropertiesStructure.TYPE.DIRECTION) {
+					lightPosition = new float[] { -(float) lightProperties.direction.x,
+							-JOGLRenderer.Y_FLAG * (float) lightProperties.direction.y,
+							-(float) lightProperties.direction.z, 0 };
+				} else {
+					lightPosition = new float[] { (float) lightProperties.position.x,
+							JOGLRenderer.Y_FLAG * (float) lightProperties.position.y,
+							(float) lightProperties.position.z, 1 };
+				}
+				gl.glLightfv(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_POSITION, lightPosition, 0);
+				// Get and set the attenuation (if it is not a direction light)
+				if (type != LightPropertiesStructure.TYPE.DIRECTION) {
+					final float linearAttenuation = lightProperties.linearAttenuation;
+					final float quadraticAttenuation = lightProperties.quadraticAttenuation;
+					gl.glLightf(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_LINEAR_ATTENUATION, linearAttenuation);
+					gl.glLightf(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+				}
+				// Get and set spot properties (if the light is a spot light)
+				if (type == LightPropertiesStructure.TYPE.SPOT) {
+					final float[] spotLight = { (float) lightProperties.direction.x,
+							JOGLRenderer.Y_FLAG * (float) lightProperties.direction.y,
+							(float) lightProperties.direction.z };
+					gl.glLightfv(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_SPOT_DIRECTION, spotLight, 0);
+					final float spotAngle = lightProperties.spotAngle;
+					gl.glLightf(GL2.GL_LIGHT0 + lightProperties.id, GL2.GL_SPOT_CUTOFF, spotAngle);
+				}
 
-	public static void setPointSize(final GL2 gl, final float size, final boolean smooth) {
-		gl.glPointSize(size);
-		if ( smooth ) {
-			gl.glEnable(GL2ES1.GL_POINT_SMOOTH);
-		} else {
-			gl.glDisable(GL2ES1.GL_POINT_SMOOTH);
+				// DRAW THE LIGHT IF NEEDED
+				if (lightProperties.drawLight && (lightProperties.id != 0)) {
+					// disable the lighting during the time the light is drawn
+					gl.glDisable(GL2.GL_LIGHTING);
+
+					// save the current color to re-set it at the end of this
+					// part
+					final float[] currentColor = GLUtilGLContext.GetCurrentColor();
+					// change the current color to the light color (the
+					// representation of the color will have the same color as
+					// the light in itself)
+					GLUtilGLContext.SetCurrentColor(gl, diffuseColor);
+					final GLUT glut = new GLUT();
+					final double x = lightProperties.direction.x;
+					final double y = lightProperties.direction.y * JOGLRenderer.Y_FLAG;
+					final double z = lightProperties.direction.z;
+					final double zNorm = z / Math.sqrt(x * x + y * y + z * z);
+					final double xNorm = x / Math.sqrt(x * x + y * y + z * z);
+					final double yNorm = y / Math.sqrt(x * x + y * y + z * z);
+					if (type == LightPropertiesStructure.TYPE.POINT) {
+						gl.glPushMatrix();
+						gl.glTranslated(lightPosition[0], lightPosition[1], lightPosition[2]);
+						glut.glutSolidSphere(size, 16, 16);
+						gl.glPopMatrix();
+					} else if (type == LightPropertiesStructure.TYPE.SPOT) {
+						gl.glPushMatrix();
+						gl.glTranslated(lightPosition[0], lightPosition[1], lightPosition[2]);
+
+						final double baseSize = Math.sin(Math.toRadians(lightProperties.spotAngle)) * size;
+
+						// see :
+						// http://opengl.developpez.com/tutoriels/opengl-tutorial/17-les-rotations-quaternions/
+						// init vector : {0,0,-1}
+						// dest vector : {x,y,z}
+						// compute angle
+						int flag = 1;
+						if (zNorm < 0) {
+							flag = -1;
+						}
+						final double cosAngle = flag * zNorm;
+
+						// compute axis : dest vect init
+						double[] axis = new double[3];
+
+						final double angle = Math.acos(flag * cosAngle);
+						axis = CrossProduct(new double[] { 0, 0, -1 }, new double[] { x, y, z });
+
+						// apply the rotation
+						gl.glRotated(Math.toDegrees(-angle) + 180, axis[0], axis[1], axis[2]);
+
+						// translate to put the summit of the cone as rotation
+						// point.
+						gl.glTranslated(0, 0, -size);
+
+						glut.glutSolidCone(baseSize, size, 16, 16);
+						gl.glPopMatrix();
+					}
+					else {
+						// draw direction light : a line and an sphere at the end of the line.
+						int maxI = 3;
+						int maxJ = 3;
+						for (int i = 0; i < maxI; i++) {
+							for (int j = 0; j < maxJ; j++) {
+								double[] beginPoint = new double[] {i*worldWidth/maxI, JOGLRenderer.Y_FLAG * j*worldHeight/maxJ, size*10};
+								double[] endPoint = new double[] {i*worldWidth/maxI+xNorm*size*3, JOGLRenderer.Y_FLAG * (j*worldHeight/maxJ) + yNorm*size*3, size*10+zNorm*size*3};
+								// draw the lines
+								gl.glBegin(GL2.GL_LINES);
+								gl.glLineWidth((float) (size/10));
+								gl.glVertex3d(beginPoint[0],beginPoint[1],beginPoint[2]);
+								gl.glVertex3d(endPoint[0],endPoint[1],endPoint[2]);
+								gl.glEnd();
+								// draw the small sphere
+								gl.glPushMatrix();
+								gl.glTranslated(endPoint[0],endPoint[1],endPoint[2]);
+								glut.glutSolidSphere(size/5, 16, 16);
+								gl.glPopMatrix();
+							}
+						}
+					}
+					GLUtilGLContext.SetCurrentColor(gl, currentColor);
+
+					gl.glEnable(GL2.GL_LIGHTING);
+				}
+			} else {
+				gl.glDisable(GL2.GL_LIGHT0 + lightProperties.id);
+			}
 		}
 	}
 
+	public static double[] CrossProduct(final double[] vect1, final double[] vect2) {
+		final double[] result = new double[3];
+		result[0] = vect1[1] * vect2[2] - vect1[2] * vect2[1];
+		result[1] = vect1[2] * vect2[0] - vect1[0] * vect2[2];
+		result[2] = vect1[0] * vect2[1] - vect1[1] * vect2[0];
+		return result;
+	}
+
 	public static void setLineWidth(final GL gl, final float size, final boolean smooth) {
+		// smooth should be set to false always, as it creates jagged lines
 		gl.glLineWidth(size);
-		if ( smooth ) {
+		if (smooth) {
 			gl.glEnable(GL.GL_LINE_SMOOTH);
+			// gl.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST);
 		} else {
 			gl.glDisable(GL.GL_LINE_SMOOTH);
 		}
 	}
 
 	/**
-	 * Set the shade model: type == 1 equals GL_SMOOTH and type == 2 equals GL_FLAT
-	 * default model is SMOOTH.
+	 * Set the shade model: type == 1 equals GL_SMOOTH and type == 2 equals
+	 * GL_FLAT default model is SMOOTH.
+	 * 
 	 * @param gl
-	 * @param type - 1 or 2.
+	 * @param type
+	 *            - 1 or 2.
 	 */
-	public static void setShadeMode(final GL2 gl, final int type) {
-		switch (type) {
-			case 1:
-				gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
-				break;
-			case 2:
-				gl.glShadeModel(GLLightingFunc.GL_FLAT);
-				break;
-			default:
-				gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
-		}
+	// public static void setShadeMode(final GL2 gl, final int type) {
+	// switch (type) {
+	// case 1:
+	// gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
+	// break;
+	// case 2:
+	// gl.glShadeModel(GLLightingFunc.GL_FLAT);
+	// break;
+	// default:
+	// gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
+	// }
+	//
+	// }
 
-	}
+	// public static void drawCircle(final GL2 gl, final double size, int
+	// n_vertexs) {
+	// if ( n_vertexs < 3 ) {
+	// n_vertexs = 3;
+	// }
+	// gl.glPushMatrix();
+	// gl.glBegin(GL.GL_TRIANGLE_FAN);
+	// gl.glVertex3d(0, 0, 0);
+	// double angle = 2 * CmnFastMath.PI / n_vertexs;
+	// for ( int i = 0; i < n_vertexs; i++ ) {
+	// gl.glVertex3d(size * FastMath.cos(i * angle), size * FastMath.sin(angle *
+	// i), 0);
+	// }
+	// gl.glVertex3d(size, 0, 0);
+	// gl.glEnd();
+	// gl.glPopMatrix();
+	// }
 
-	public static void drawCircle(final GL2 gl, final double size, int n_vertexs) {
-		if ( n_vertexs < 3 ) {
-			n_vertexs = 3;
-		}
-		gl.glPushMatrix();
-		gl.glBegin(GL.GL_TRIANGLE_FAN);
-		gl.glVertex3d(0, 0, 0);
-		double angle = 2 * Math.PI / n_vertexs;
-		for ( int i = 0; i < n_vertexs; i++ ) {
-			gl.glVertex3d(size * Math.cos(i * angle), size * Math.sin(angle * i), 0);
-		}
-		gl.glVertex3d(size, 0, 0);
-		gl.glEnd();
-		gl.glPopMatrix();
-	}
-
-	public static void drawEmptyCircle(final GL2 gl, final double size, int n_vertexs) {
-		if ( n_vertexs < 3 ) {
-			n_vertexs = 3;
-		}
-		gl.glPushMatrix();
-		gl.glBegin(GL.GL_LINE_LOOP);
-		gl.glNormal3d(0, 0, 1);
-
-		double angle = 2 * Math.PI / n_vertexs;
-		for ( int i = 0; i < n_vertexs; i++ ) {
-			gl.glVertex3d(size * Math.cos(i * angle), size * Math.sin(angle * i), 0);
-		}
-
-		gl.glEnd();
-		gl.glPopMatrix();
-	}
+	// public static void drawEmptyCircle(final GL2 gl, final double size, int
+	// n_vertexs) {
+	// if ( n_vertexs < 3 ) {
+	// n_vertexs = 3;
+	// }
+	// gl.glPushMatrix();
+	// gl.glBegin(GL.GL_LINE_LOOP);
+	// gl.glNormal3d(0, 0, 1);
+	//
+	// double angle = 2 * CmnFastMath.PI / n_vertexs;
+	// for ( int i = 0; i < n_vertexs; i++ ) {
+	// gl.glVertex3d(size * FastMath.cos(i * angle), size * FastMath.sin(angle *
+	// i), 0);
+	// }
+	//
+	// gl.glEnd();
+	// gl.glPopMatrix();
+	// }
 
 }

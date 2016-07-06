@@ -1,22 +1,23 @@
 /*********************************************************************************************
- * 
- * 
+ *
+ *
  * 'BasicExpressionDescription.java', in plugin 'msi.gama.core', is part of the source code of the
  * GAMA modeling and simulation platform.
  * (c) 2007-2014 UMI 209 UMMISCO IRD/UPMC & Partners
- * 
+ *
  * Visit https://code.google.com/p/gama-platform/ for license information and developers contact.
- * 
- * 
+ *
+ *
  **********************************************************************************************/
 package msi.gaml.descriptions;
 
 import java.util.*;
+import org.eclipse.emf.ecore.EObject;
 import msi.gama.common.util.StringUtils;
+import msi.gama.precompiler.GamlProperties;
 import msi.gama.util.GAML;
 import msi.gaml.expressions.*;
 import msi.gaml.types.*;
-import org.eclipse.emf.ecore.EObject;
 
 public class BasicExpressionDescription implements IExpressionDescription {
 
@@ -43,6 +44,13 @@ public class BasicExpressionDescription implements IExpressionDescription {
 	@Override
 	public String serialize(final boolean includingBuiltIn) {
 		return expression == null ? toOwnString() : expression.serialize(includingBuiltIn);
+	}
+
+	@Override
+	public void collectMetaInformation(final GamlProperties meta) {
+		if ( expression != null ) {
+			expression.collectMetaInformation(meta);
+		}
 	}
 
 	@Override
@@ -139,8 +147,8 @@ public class BasicExpressionDescription implements IExpressionDescription {
 	public IType getDenotedType(final IDescription context) {
 		compile(context);
 		if ( expression instanceof TypeExpression ) { return expression.getType(); }
-		if ( expression instanceof ConstantExpression ) { return context.getTypeNamed(expression.literalValue()); }
-		return Types.NO_TYPE;
+		if (expression.isConst()) return context.getTypeNamed(GamaStringType.staticCast(null, expression.value(null), true));
+		return context.getTypeNamed(expression.literalValue());
 	}
 
 }

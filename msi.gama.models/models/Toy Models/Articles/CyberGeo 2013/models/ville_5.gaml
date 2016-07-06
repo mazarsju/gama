@@ -1,4 +1,12 @@
-
+/**
+* Name: Ville 5
+* Author: 
+* Description: Creation of buildings and roads thanks to a shape file. The color of the building depends on the type of the building, 
+* 	while the color of a house depend on its income. People among the world will try to find the best building according to the 
+* 	mean income of their neighbors and their own income, but also to their working place. This model add a new display showing 
+* 	the "color" of each building according to the mean income of its residents
+* Tags: gui, shapefile, graph
+*/
 model ville
 
 global {
@@ -8,12 +16,12 @@ global {
 	graph<point, route> reseau_route;
 	
 	init {
-		create batiment from: shape_file_batiments with: [type:: string(read("NATURE"))];
 		create route from: shape_file_routes;
-		create foyer number: 500;
 		reseau_route <- as_edge_graph(route);
+		create batiment from: shape_file_batiments with: [type:: string(read("NATURE"))];
+		create foyer number: 500;
 	}
-}
+} 
 
 species foyer {
 	float revenu <- gauss(1500, 500);
@@ -78,12 +86,12 @@ species route {
 }
 experiment ville type: gui {
 	output {
-		display carte_principale type: java2D ambient_light: 100{
+		display carte_principale type: java2D {
 			species batiment aspect: geometrie;
 			species route aspect: geometrie;
 			species foyer aspect: revenu;
 		}
-		display carte_batiment type: opengl ambient_light: 100{
+		display carte_batiment type: opengl {
 			species batiment aspect: information_foyer;
 		}
 	}

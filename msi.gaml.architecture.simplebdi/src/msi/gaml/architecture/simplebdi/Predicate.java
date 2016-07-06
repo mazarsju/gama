@@ -11,7 +11,9 @@
  **********************************************************************************************/
 package msi.gaml.architecture.simplebdi;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import msi.gama.common.interfaces.IValue;
 import msi.gama.precompiler.GamlAnnotations.getter;
@@ -20,7 +22,8 @@ import msi.gama.precompiler.GamlAnnotations.vars;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
 import msi.gama.util.GamaMapFactory;
-import msi.gaml.types.*;
+import msi.gaml.types.IType;
+import msi.gaml.types.Types;
 
 @vars({ @var(name = "name", type = IType.STRING), @var(name = "is_true", type = IType.BOOL),
 	@var(name = "values", type = IType.MAP), @var(name = "priority", type = IType.FLOAT),
@@ -38,6 +41,8 @@ public class Predicate implements IValue {
 	Predicate superIntention;
 	boolean everyPossibleValues = false;
 	boolean is_true=true;
+	int lifetime = -1;
+	boolean isUpdated = false;
 	
 	@getter("name")
 	public String getName() {
@@ -78,6 +83,10 @@ public class Predicate implements IValue {
 		return onHoldUntil;
 	}
 
+	public int getLifetime(){
+		return lifetime;
+	}
+	
 	public void setSuperIntention(Predicate superPredicate){
 		this.superIntention = superPredicate;
 	}
@@ -91,7 +100,7 @@ public class Predicate implements IValue {
 	}
 	
 	public void setValues(final Map<String, Object> values){
-		this.values = (Map<String, Object>) GamaMapFactory.createWithoutCasting(getType().getKeyType(), getType().getContentType(), values);
+		this.values = values;
 		everyPossibleValues = values == null;
 	}
 
@@ -111,6 +120,10 @@ public class Predicate implements IValue {
 		this.subintentions = subintentions;
 	}
 
+	public void setLifetime(final int lifetime){
+		this.lifetime = lifetime;
+	}
+	
 	public Predicate() {
 		super();
 		this.name = "";
@@ -129,26 +142,48 @@ public class Predicate implements IValue {
 		everyPossibleValues = true;
 		is_true=ist;
 	}
-
+	
+	public Predicate(final String name, double priority){
+		super();
+		this.name = name;
+		everyPossibleValues = true;
+		this.priority = priority;
+	}
+	
+	public Predicate(final String name, int lifetime){
+		super();
+		this.name = name;
+		everyPossibleValues = true;
+		this.lifetime = lifetime;
+	}
+	
 	public Predicate(final String name, final Map<String, Object> values) {
 		super();
 		this.name = name;
-		this.values = (Map<String, Object>) GamaMapFactory.createWithoutCasting(getType().getKeyType(), getType().getContentType(), values);
+		this.values = values;
 		everyPossibleValues = values == null;;
 	}
 
 	public Predicate(final String name, final Map<String, Object> values, final Boolean truth) {
 		super();
 		this.name = name;
-		this.values = (Map<String, Object>) GamaMapFactory.createWithoutCasting(getType().getKeyType(), getType().getContentType(), values);
+		this.values = values;
 		this.is_true=truth;
 		everyPossibleValues = values == null;;
 	}
 
+	public Predicate(final String name, final Map<String, Object> values, final int lifetime) {
+		super();
+		this.name = name;
+		this.values = values;
+		this.lifetime=lifetime;
+		everyPossibleValues = values == null;;
+	}
+	
 	public Predicate(final String name, final double priority, final Map<String, Object> values) {
 		super();
 		this.name = name;
-		this.values = (Map<String, Object>) GamaMapFactory.createWithoutCasting(getType().getKeyType(), getType().getContentType(), values);
+		this.values = values;
 		this.priority = priority;
 		everyPossibleValues = values == null;
 	}
@@ -178,7 +213,14 @@ public class Predicate implements IValue {
 	public IValue copy(final IScope scope) throws GamaRuntimeException {
 		return new Predicate(name, priority, new LinkedHashMap<String, Object>(values));
 	}
-
+	
+	public void updateLifetime(){
+		if((this.lifetime>0) && (!this.isUpdated)){
+			this.lifetime = this.lifetime-1;
+			this.isUpdated = true;
+		}
+	}
+	
 	public boolean isSimilarName(final Predicate other) {
 		if ( this == other ) { return true; }
 		if ( other == null ) { return false; }
@@ -206,20 +248,99 @@ public class Predicate implements IValue {
 		if ( name == null ) {
 			if ( other.name != null ) { return false; }
 		} else if ( !name.equals(other.name) ) { return false; }
-
+		if(subintentions == null){
+			if (other.subintentions!=null && !other.subintentions.isEmpty()){return false;}
+		} else if(!subintentions.equals(other.subintentions)) {return false;}
+		if(superIntention == null){
+			if(other.superIntention != null){return false;}
+		}else if(!superIntention.partialEquality(other.superIntention)){return false;}	
+		if(is_true!=other.is_true){return false;}
+		if(lifetime!=other.lifetime){return false;}
 		if ( everyPossibleValues || other.everyPossibleValues ) { return true; }
 		if ( values == null ) {
 			if ( other.values != null ) { return false; }
 		} else if ( !values.equals(other.values) ) { return false; }
-		if(subintentions == null){
-			if (other.subintentions!=null){return false;}
-		} else if(!subintentions.equals(other.subintentions)) {return false;}
-		if(superIntention == null){
-			if(other.superIntention != null){return false;}
-		}else if(!superIntention.equals(other.superIntention)){return false;}
+		
 		return true;
 	}
 
+	private boolean partialEquality(final Object obj){
+		//You don't test the sub-intentions. Used when testing the equality of the super-intention
+		if ( this == obj ) { return true; }
+		if ( obj == null ) { return false; }
+		if ( getClass() != obj.getClass() ) { return false; }
+		Predicate other = (Predicate) obj;
+		if ( name == null ) {
+			if ( other.name != null ) { return false; }
+		} else if ( !name.equals(other.name) ) { return false; }
+		if(superIntention == null){
+			if(other.superIntention != null){return false;}
+		}else if(!superIntention.equals(other.superIntention)){return false;}
+		if(is_true!=other.is_true){return false;}
+		if(lifetime!=other.lifetime){return false;}
+		if ( everyPossibleValues || other.everyPossibleValues ) { return true; }
+		if ( values == null ) {
+			if ( other.values != null ) { return false; }
+		} else if ( !values.equals(other.values) ) { return false; }
+		
+		return true;
+	}
+	
+	public boolean equalsIntentionPlan(final Object obj){
+		//Only test case where the parameter is not null
+		if ( this == obj ) { return true; }
+		if ( obj == null ) { return false; }
+		if ( getClass() != obj.getClass() ) { return false; }
+		Predicate other = (Predicate) obj;
+		if ( name == null ) {
+			if ( other.name != null ) { return false; }
+		} else if ( !name.equals(other.name) ) { return false; }
+		if(subintentions!=null){
+			if(!subintentions.equals(other.subintentions)) {return false;}
+		}
+		if(superIntention!=null){
+			if(!superIntention.equals(other.superIntention)){return false;}
+		}
+		if(is_true!=other.is_true){return false;}
+		if(lifetime!=-1){
+			if(lifetime!=other.lifetime){return false;}
+		}
+		if ( everyPossibleValues || other.everyPossibleValues ) { return true; }
+		if ( values == null ) {
+			if ( other.values != null ) { return false; }
+		} else if ( !values.equals(other.values) ) { return false; }
+		
+		return true;
+	}
+	
+	public boolean equalsButNotTruth(final Object obj){
+		//return true if the predicates are equals but one is true and not the other
+		//Doesn't check the lifetime value
+		//Used in emotions
+		if ( obj == null ) { return false; }
+		if ( getClass() != obj.getClass() ) { return false; }
+		Predicate other = (Predicate) obj;
+		if ( name == null ) {
+			if ( other.name != null ) { return false; }
+		} else if ( !name.equals(other.name) ) { return false; }
+		if(subintentions == null){
+			if (other.subintentions!=null && !other.subintentions.isEmpty()){return false;}
+		} else if(!subintentions.equals(other.subintentions)) {return false;}
+		if(superIntention == null){
+			if(other.superIntention != null){return false;}
+		}else if(!superIntention.partialEquality(other.superIntention)){return false;}	
+		if(is_true!=other.is_true){
+			if ( everyPossibleValues || other.everyPossibleValues ) { return true; }
+			if ( values == null ) {
+				if ( other.values != null ) { return false; }
+			} else if ( !values.equals(other.values) ) { return false; }
+			
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
 	/**
 	 * Method getType()
 	 * @see msi.gama.common.interfaces.ITyped#getType()

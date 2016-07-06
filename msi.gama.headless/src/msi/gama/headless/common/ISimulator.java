@@ -11,8 +11,8 @@
  **********************************************************************************************/
 package msi.gama.headless.common;
 
-import msi.gama.headless.core.Simulation.ListenedVariable;
-import msi.gama.headless.core.Simulation.OutputType;
+import msi.gama.headless.job.ExperimentJob.ListenedVariable;
+import msi.gama.headless.job.ExperimentJob.OutputType;
 
 public interface ISimulator {
 
@@ -36,7 +36,7 @@ public interface ISimulator {
 	 */
 	public void retrieveOutputValue(ListenedVariable v);
 
-	public void load(String var, String exp, String expName);
+	public void load(String var, String exp, String expName, long seed);
 
 	/**
 	 * @param name

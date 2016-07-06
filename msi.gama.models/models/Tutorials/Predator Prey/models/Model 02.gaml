@@ -1,5 +1,11 @@
+/**
+* Name: Dynamic of the vegetation (grid)
+* Author:
+* Description: Second part of the tutorial : Predator Prey
+* Tags: grid
+*/
+
 model prey_predator
-//Model 2 of the predator/prey tutorial
 
 global {
 	int nb_preys_init <- 200;
@@ -22,7 +28,7 @@ species prey {
 	}
 }
 
-grid vegetation_cell width: 50 height: 50 neighbours: 4 {
+grid vegetation_cell width: 50 height: 50 neighbors: 4 {
 	float maxFood <- 1.0 ;
 	float foodProd <- (rnd(1000) / 1000) * 0.01 ;
 	float food <- (rnd(1000) / 1000) max: maxFood update: food + foodProd ;

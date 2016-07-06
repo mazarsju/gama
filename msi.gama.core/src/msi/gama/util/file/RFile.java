@@ -15,6 +15,7 @@ import java.io.*;
 import java.util.*;
 import msi.gama.common.GamaPreferences;
 import msi.gama.common.util.*;
+import msi.gama.precompiler.IConcept;
 import msi.gama.precompiler.GamlAnnotations.file;
 import msi.gama.runtime.IScope;
 import msi.gama.runtime.exceptions.GamaRuntimeException;
@@ -28,7 +29,8 @@ import com.vividsolutions.jts.geom.Envelope;
 	extensions = { "r" },
 	buffer_type = IType.MAP,
 	buffer_content = IType.LIST,
-	buffer_index = IType.STRING)
+	buffer_index = IType.STRING,
+	concept = { IConcept.FILE, IConcept.R })
 public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList> {
 
 	private final boolean DEBUG = false; // Change DEBUG = false for release version
@@ -100,10 +102,10 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 			// tmthai.begin----------------------------------------------------------------------------
 			String fullPath = FileUtils.constructAbsoluteFilePath(scope, RFile, true);
 			if ( DEBUG ) {
-				GuiUtils.debug("Stats.R_compute_param.RScript:" + RPath);
-				GuiUtils.debug("Stats.R_compute_param.Param:" + vectorParam.toString());
-				GuiUtils.debug("Stats.R_compute_param.RFile:" + RFile);
-				GuiUtils.debug("Stats.R_compute_param.fullPath:" + fullPath);
+				scope.getGui().debug("Stats.R_compute_param.RScript:" + RPath);
+				scope.getGui().debug("Stats.R_compute_param.Param:" + vectorParam.toString());
+				scope.getGui().debug("Stats.R_compute_param.RFile:" + RFile);
+				scope.getGui().debug("Stats.R_compute_param.fullPath:" + fullPath);
 			}
 
 			// FileReader fr = new FileReader(RFile);
@@ -130,7 +132,7 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 			// DEBUG:
 			// java.lang.System.out.println("Name: '" + R_statements.length(scope) + "'");
 			if ( DEBUG ) {
-				GuiUtils.debug("Stats.R_compute_param.R_statements.length: '" + R_statements.size() + "'");
+				scope.getGui().debug("Stats.R_compute_param.R_statements.length: '" + R_statements.size() + "'");
 			}
 
 			for ( String name : caller.getParser().getNames() ) {
@@ -138,7 +140,7 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 				results = caller.getParser().getAsStringArray(name);
 				// java.lang.System.out.println("Name: '" + name + "'");
 				if ( DEBUG ) {
-					GuiUtils.debug("Stats.R_compute_param.caller.Name: '" + name + "' length: " + results.length +
+					scope.getGui().debug("Stats.R_compute_param.caller.Name: '" + name + "' length: " + results.length +
 						" - Value: " + results.toString());
 				}
 
@@ -146,7 +148,7 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 			}
 
 			if ( DEBUG ) {
-				GuiUtils.debug("Stats.R_compute_param.return:" + result.serialize(false));
+				scope.getGui().debug("Stats.R_compute_param.return:" + result.serialize(false));
 			}
 
 			setBuffer(result);
@@ -177,9 +179,9 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 			// tmthai.begin----------------------------------------------------------------------------
 			String fullPath = FileUtils.constructAbsoluteFilePath(scope, RFile, true);
 			if ( DEBUG ) {
-				GuiUtils.debug("Stats.R_compute.RScript:" + RPath);
-				GuiUtils.debug("Stats.R_compute.RFile:" + RFile);
-				GuiUtils.debug("Stats.R_compute.fullPath:" + fullPath);
+				scope.getGui().debug("Stats.R_compute.RScript:" + RPath);
+				scope.getGui().debug("Stats.R_compute.RFile:" + RFile);
+				scope.getGui().debug("Stats.R_compute.fullPath:" + fullPath);
 			}
 
 			// FileReader fr = new FileReader(RFile);
@@ -193,7 +195,7 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 				R_statements.add(statement);
 				// java.lang.System.out.println(statement);
 				if ( DEBUG ) {
-					GuiUtils.debug("Stats.R_compute.statement:" + statement);
+					scope.getGui().debug("Stats.R_compute.statement:" + statement);
 				}
 
 			}
@@ -213,13 +215,13 @@ public class RFile extends GamaFile<GamaMap<String, IList>, IList, String, IList
 				// java.lang.System.out.println(results[i]);
 				// }
 				if ( DEBUG ) {
-					GuiUtils.debug("Stats.R_compute_param.caller.Name: '" + name + "' length: " + results.length +
+					scope.getGui().debug("Stats.R_compute_param.caller.Name: '" + name + "' length: " + results.length +
 						" - Value: " + results.toString());
 				}
 				result.put(name, GamaListFactory.createWithoutCasting(Types.NO_TYPE, results));
 			}
 			if ( DEBUG ) {
-				GuiUtils.debug("Stats.R_compute.return:" + result.serialize(false));
+				scope.getGui().debug("Stats.R_compute.return:" + result.serialize(false));
 			}
 			// return result;
 			setBuffer(result);
